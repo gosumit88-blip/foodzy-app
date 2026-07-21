@@ -33,13 +33,13 @@ jobs:
 
     - name: Create Project & Build APK/AAB
       run: |
-        # 1. Cordova project create karein
+        # 1. Cordova project banayein
         cordova create foodzy_project com.foodzy.app "Foodzy"
         
-        # 2. Project folder ke andar jayein
+        # 2. Project folder me jayein
         cd foodzy_project
         
-        # 3. Default config clear karein
+        # 3. Default files delete karein
         rm -rf www/*
         rm -f config.xml
         
@@ -47,14 +47,17 @@ jobs:
         cp ../index.html www/
         cp ../config.xml .
         
-        # 5. Latest Cordova Android platform add karein (Gradle conflicts se bachne ke liye)
-        cordova platform add android@latest --no-telemetry
+        # 5. Android platform add karein
+        cordova platform add android@13.0.0 --no-telemetry
         
-        # 6. Debug APK build karein
-        cordova build android --debug --no-telemetry
+        # 6. Gradle options set karein memory aur deprecation fixes ke liye
+        export GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx2048m -Dorg.gradle.daemon=false"
         
-        # 7. Play Store ke liye Release AAB build karein
-        cordova build android --release -- --packageType=bundle --no-telemetry
+        # 7. Debug APK build karein (Verbose log ke sath)
+        cordova build android --debug --no-telemetry -- --gradleArg=-Dorg.gradle.daemon=false
+        
+        # 8. Release AAB bundle build karein
+        cordova build android --release --no-telemetry -- --packageType=bundle --gradleArg=-Dorg.gradle.daemon=false
 
     - name: Upload APK and AAB to GitHub
       uses: actions/upload-artifact@v4
