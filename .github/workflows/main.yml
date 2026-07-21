@@ -33,8 +33,7 @@ jobs:
 
     - name: Create Project & Build APK/AAB
       run: |
-        # Naye package ID com.foodzy.customerapp ke sath project banayein
-        cordova create foodzy_project com.foodzy.customerapp "Foodzy"
+        cordova create foodzy_project com.foodzy.app "Foodzy"
         cd foodzy_project
         
         rm -rf www/*
@@ -53,18 +52,24 @@ jobs:
         # 2. Release AAB Build
         cordova build android --release --no-telemetry -- --packageType=bundle --gradleArg=-Dorg.gradle.daemon=false
 
-    - name: Generate Keystore & Sign AAB
+    - name: Generate Keystore & Export PEM Certificate
       run: |
         cd foodzy_project/platforms/android/app/build/outputs/bundle/release/
         
-        # Keystore generate karke AAB ko digitally sign karein
-        keytool -genkey -v -keystore release.keystore -alias foodzy_alias -keyalg RSA -keysize 2048 -validity 10000 -storepass foodzy123 -keypass foodzy123 -dname "CN=Foodzy, OU=App, O=Foodzy, L=Kailashahar, ST=Tripura, C=IN"
-        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore release.keystore -storepass foodzy123 -keypass foodzy123 app-release.aab foodzy_alias
+        # Fixed params ke sath Keystore generate karein
+        keytool -genkey -v -keystore foodzy_upload.keystore -alias foodzy_upload -keyalg RSA -keysize 2048 -validity 10000 -storepass foodzyKey123 -keypass foodzyKey123 -dname "CN=Foodzy, OU=App, O=Foodzy, L=Kailashahar, ST=Tripura, C=IN"
+        
+        # Google Play Reset request ke liye PEM Certificate Export karein
+        keytool -export -rfc -keystore foodzy_upload.keystore -alias foodzy_upload -file upload_certificate.pem -storepass foodzyKey123
+        
+        # AAB ko Sign karein
+        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore foodzy_upload.keystore -storepass foodzyKey123 -keypass foodzyKey123 app-release.aab foodzy_upload
 
-    - name: Upload Signed APK and AAB to GitHub
+    - name: Upload Signed AAB & PEM Certificate to GitHub
       uses: actions/upload-artifact@v4
       with:
         name: Foodzy-Signed-Builds
         path: |
           foodzy_project/platforms/android/app/build/outputs/apk/debug/app-debug.apk
           foodzy_project/platforms/android/app/build/outputs/bundle/release/app-release.aab
+          foodzy_project/platforms/android/app/build/outputs/bundle/release/upload_certificate.pem
