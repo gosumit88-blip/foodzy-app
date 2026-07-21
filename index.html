@@ -1,0 +1,1884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Foodzy — Food in minutes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --green:#0E7C4A;
+  --green-dark:#0A5C38;
+  --green-soft:#E4F3EA;
+  --amber:#FFA630;
+  --amber-dark:#E88A00;
+  --red:#E85D4A;
+  --ink:#1B2E28;
+  --muted:#748179;
+  --paper:#FBF9F4;
+  --card:#FFFFFF;
+  --line:#E7E2D6;
+  --radius:16px;
+  --shadow:0 6px 20px rgba(27,46,40,0.08);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  -webkit-tap-highlight-color:transparent;
+  overscroll-behavior-y:none;
+}
+h1,h2,h3,.display{font-family:'Baloo 2',sans-serif;}
+.mono{font-family:'Space Mono',monospace;}
+button{font-family:inherit;cursor:pointer;border:none;background:none;}
+input,textarea{font-family:inherit;}
+a{color:inherit;}
+::-webkit-scrollbar{display:none;}
+
+/* ============ APP SHELL ============ */
+#appShell{
+  max-width:480px;
+  margin:0 auto;
+  min-height:100vh;
+  background:var(--paper);
+  position:relative;
+  display:none;
+  padding-bottom:78px;
+}
+#appShell.visible{display:block;}
+
+/* ============ LOGIN ============ */
+#loginScreen{
+  min-height:100vh;
+  max-width:480px;
+  margin:0 auto;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:32px 28px;
+  background:linear-gradient(160deg,var(--green) 0%,var(--green-dark) 65%);
+  color:#fff;
+}
+.login-logo{
+  font-size:15px;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  opacity:0.85;
+  margin-bottom:6px;
+  font-family:'Space Mono',monospace;
+}
+.login-title{
+  font-size:44px;
+  font-weight:800;
+  line-height:1.05;
+  margin:0 0 6px;
+}
+.login-sub{
+  font-size:15px;
+  opacity:0.85;
+  margin:0 0 36px;
+  max-width:320px;
+}
+.login-card{
+  background:#fff;
+  border-radius:20px;
+  padding:24px 20px;
+  color:var(--ink);
+  box-shadow:0 20px 40px rgba(0,0,0,0.18);
+}
+.field-label{
+  font-size:12px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  color:var(--muted);
+  margin-bottom:6px;
+  display:block;
+}
+.field-input{
+  width:100%;
+  padding:13px 14px;
+  border:1.5px solid var(--line);
+  border-radius:12px;
+  font-size:16px;
+  margin-bottom:16px;
+  outline:none;
+  color:var(--ink);
+  background:#fdfcfa;
+}
+.field-input:focus{border-color:var(--green);}
+.btn-primary{
+  width:100%;
+  background:var(--green);
+  color:#fff;
+  padding:15px;
+  border-radius:12px;
+  font-size:16px;
+  font-weight:700;
+  font-family:'Baloo 2',sans-serif;
+  letter-spacing:0.3px;
+  transition:transform .15s ease, background .15s ease;
+}
+.btn-primary:active{transform:scale(0.98);background:var(--green-dark);}
+.btn-primary.amber{background:var(--amber);color:var(--ink);}
+.btn-primary.amber:active{background:var(--amber-dark);}
+.btn-primary:disabled{opacity:0.5;pointer-events:none;}
+.login-foot{
+  text-align:center;
+  font-size:12px;
+  color:rgba(255,255,255,0.7);
+  margin-top:22px;
+}
+
+/* ============ TOP BAR ============ */
+.topbar{
+  padding:16px 18px 12px;
+  background:var(--paper);
+  position:sticky;
+  top:0;
+  z-index:20;
+  border-bottom:1px solid transparent;
+}
+.topbar.scrolled{border-bottom-color:var(--line);}
+.loc-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.loc-btn{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  text-align:left;
+  max-width:78%;
+}
+.loc-pin{
+  font-size:20px;
+  flex-shrink:0;
+}
+.loc-text-label{
+  font-size:11px;
+  color:var(--muted);
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.4px;
+}
+.loc-text-value{
+  font-size:14px;
+  font-weight:700;
+  color:var(--ink);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:230px;
+}
+.timer-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  background:var(--ink);
+  color:#fff;
+  font-family:'Space Mono',monospace;
+  font-size:11px;
+  font-weight:700;
+  padding:6px 10px;
+  border-radius:20px;
+  white-space:nowrap;
+}
+.timer-chip.on-amber{background:var(--amber);color:var(--ink);}
+.timer-chip.on-green{background:var(--green-soft);color:var(--green-dark);}
+.greet{
+  font-size:22px;
+  font-weight:700;
+  margin:14px 0 12px;
+}
+.search-bar{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:#fff;
+  border:1.5px solid var(--line);
+  border-radius:14px;
+  padding:11px 14px;
+}
+.search-bar input{
+  border:none;
+  outline:none;
+  flex:1;
+  font-size:14px;
+  background:transparent;
+}
+
+/* ============ BANNER CAROUSEL ============ */
+.banner-wrap{
+  padding:16px 18px 4px;
+}
+.banner-track-outer{
+  overflow:hidden;
+  border-radius:20px;
+}
+.banner-track{
+  display:flex;
+  transition:transform .45s cubic-bezier(.65,0,.35,1);
+}
+.banner-slide{
+  min-width:100%;
+  padding:26px 22px;
+  height:150px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  color:#fff;
+  position:relative;
+  overflow:hidden;
+}
+.banner-slide::after{
+  content:'';
+  position:absolute;
+  right:-30px;top:-30px;
+  width:140px;height:140px;
+  border-radius:50%;
+  background:rgba(255,255,255,0.12);
+}
+.banner-eyebrow{
+  font-family:'Space Mono',monospace;
+  font-size:11px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  opacity:0.85;
+  margin-bottom:6px;
+}
+.banner-title{
+  font-family:'Baloo 2',sans-serif;
+  font-size:22px;
+  font-weight:700;
+  line-height:1.15;
+  max-width:75%;
+}
+.banner-sub{
+  font-size:13px;
+  opacity:0.9;
+  margin-top:6px;
+  max-width:75%;
+}
+.banner-dots{
+  display:flex;
+  justify-content:center;
+  gap:6px;
+  margin-top:10px;
+}
+.banner-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--line);
+  transition:all .25s;
+}
+.banner-dot.active{
+  width:18px;
+  background:var(--green);
+}
+
+/* ============ CATEGORIES ============ */
+.section-head{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  padding:22px 18px 10px;
+}
+.section-head h2{
+  font-size:18px;
+  margin:0;
+}
+.cat-scroll{
+  display:flex;
+  gap:10px;
+  overflow-x:auto;
+  padding:2px 18px 6px;
+}
+.cat-chip{
+  flex-shrink:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  padding:10px 14px;
+  background:#fff;
+  border:1.5px solid var(--line);
+  border-radius:14px;
+  min-width:76px;
+}
+.cat-chip.active{
+  background:var(--green);
+  border-color:var(--green);
+  color:#fff;
+}
+.cat-emoji{font-size:22px;}
+.cat-label{font-size:11px;font-weight:700;text-align:center;line-height:1.2;}
+
+/* ============ ITEMS GRID ============ */
+.items-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  padding:14px 18px 20px;
+}
+.item-card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:12px;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+}
+.item-emoji-box{
+  height:76px;
+  border-radius:12px;
+  background:var(--green-soft);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:34px;
+  margin-bottom:10px;
+}
+.item-time-badge{
+  position:absolute;
+  top:20px;left:20px;
+  font-family:'Space Mono',monospace;
+  font-size:9px;
+  font-weight:700;
+  background:rgba(27,46,40,0.75);
+  color:#fff;
+  padding:3px 6px;
+  border-radius:8px;
+}
+.item-name{
+  font-size:13.5px;
+  font-weight:600;
+  line-height:1.25;
+  margin-bottom:2px;
+  min-height:34px;
+}
+.item-unit{
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:8px;
+}
+.item-bottom{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-top:auto;
+}
+.item-price-row{
+  display:flex;
+  flex-direction:column;
+}
+.item-price{
+  font-family:'Space Mono',monospace;
+  font-weight:700;
+  font-size:14px;
+}
+.item-mrp{
+  font-size:10.5px;
+  color:var(--muted);
+  text-decoration:line-through;
+}
+.add-btn{
+  background:var(--green);
+  color:#fff;
+  font-weight:700;
+  font-size:12px;
+  padding:7px 14px;
+  border-radius:10px;
+  letter-spacing:0.3px;
+}
+.qty-stepper{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:var(--green);
+  border-radius:10px;
+  padding:4px 6px;
+}
+.qty-stepper button{
+  color:#fff;
+  font-size:16px;
+  font-weight:700;
+  width:20px;height:20px;
+  display:flex;align-items:center;justify-content:center;
+}
+.qty-stepper .qty-num{
+  color:#fff;
+  font-weight:700;
+  font-family:'Space Mono',monospace;
+  font-size:13px;
+  min-width:14px;
+  text-align:center;
+}
+
+.empty-state{
+  text-align:center;
+  padding:60px 30px;
+  color:var(--muted);
+}
+.empty-emoji{font-size:44px;margin-bottom:14px;}
+.empty-title{font-family:'Baloo 2',sans-serif;font-size:18px;color:var(--ink);margin-bottom:6px;font-weight:700;}
+.empty-sub{font-size:13.5px;margin-bottom:18px;}
+
+/* ============ VIEWS ============ */
+.view{display:none;}
+.view.active{display:block;}
+.page-title{
+  font-size:24px;
+  font-weight:700;
+  padding:18px 18px 4px;
+}
+
+/* ============ BAG ============ */
+.bag-list{padding:8px 18px;}
+.bag-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:10px;
+  margin-bottom:10px;
+}
+.bag-emoji{
+  width:52px;height:52px;
+  border-radius:10px;
+  background:var(--green-soft);
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;
+  flex-shrink:0;
+}
+.bag-info{flex:1;min-width:0;}
+.bag-name{font-size:13.5px;font-weight:600;}
+.bag-unit{font-size:11px;color:var(--muted);margin-bottom:4px;}
+.bag-price{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;}
+
+.card-block{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  margin:6px 18px 16px;
+  padding:16px;
+}
+.card-block h3{
+  font-size:15px;
+  margin:0 0 12px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.bill-row{
+  display:flex;
+  justify-content:space-between;
+  font-size:13.5px;
+  padding:6px 0;
+  color:var(--muted);
+}
+.bill-row.total{
+  color:var(--ink);
+  font-weight:700;
+  font-size:15.5px;
+  border-top:1.5px dashed var(--line);
+  margin-top:6px;
+  padding-top:12px;
+}
+.bill-row .amt{font-family:'Space Mono',monospace;}
+.bill-row.discount{color:var(--green-dark);}
+
+.coupon-row{display:flex;gap:8px;}
+.coupon-row input{
+  flex:1;
+  border:1.5px solid var(--line);
+  border-radius:10px;
+  padding:11px 12px;
+  font-size:13.5px;
+  text-transform:uppercase;
+  outline:none;
+}
+.coupon-row input:focus{border-color:var(--green);}
+.coupon-apply-btn{
+  background:var(--ink);
+  color:#fff;
+  padding:0 18px;
+  border-radius:10px;
+  font-weight:700;
+  font-size:13px;
+}
+.coupon-chip-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+.coupon-suggest{
+  border:1.5px dashed var(--amber);
+  background:#FFF6E8;
+  color:var(--amber-dark);
+  font-family:'Space Mono',monospace;
+  font-size:11px;
+  font-weight:700;
+  padding:6px 10px;
+  border-radius:8px;
+}
+.coupon-applied{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  background:var(--green-soft);
+  border-radius:10px;
+  padding:10px 12px;
+  font-size:12.5px;
+  color:var(--green-dark);
+  font-weight:600;
+}
+.coupon-applied button{color:var(--red);font-weight:700;font-size:12px;}
+
+.field-row{margin-bottom:12px;}
+.field-row label{
+  font-size:11.5px;
+  font-weight:700;
+  text-transform:uppercase;
+  color:var(--muted);
+  letter-spacing:0.4px;
+  display:block;
+  margin-bottom:5px;
+}
+.field-row input, .field-row textarea{
+  width:100%;
+  border:1.5px solid var(--line);
+  border-radius:10px;
+  padding:11px 12px;
+  font-size:14px;
+  outline:none;
+  resize:none;
+}
+.field-row input:focus, .field-row textarea:focus{border-color:var(--green);}
+.map-pick-btn{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:var(--green-soft);
+  color:var(--green-dark);
+  font-weight:700;
+  font-size:13px;
+  padding:11px 14px;
+  border-radius:10px;
+  margin-bottom:12px;
+  width:100%;
+  justify-content:center;
+}
+.distance-note{
+  background:var(--green-soft);
+  color:var(--green-dark);
+  font-size:12px;
+  font-weight:600;
+  padding:9px 12px;
+  border-radius:10px;
+  margin:-2px 0 14px;
+}
+.distance-note.warn{
+  background:#FDEAE6;
+  color:var(--red);
+}
+
+.place-order-bar{
+  position:sticky;
+  bottom:78px;
+  padding:12px 18px 18px;
+  background:linear-gradient(to top, var(--paper) 60%, rgba(251,249,244,0));
+}
+
+/* ============ ORDERS ============ */
+.ticket{
+  background:#fff;
+  border-radius:16px;
+  margin:0 18px 16px;
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.ticket-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 16px;
+  background:var(--ink);
+  color:#fff;
+}
+.ticket-id{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;}
+.ticket-date{font-size:10.5px;opacity:0.75;}
+.ticket-status{
+  font-size:10px;
+  font-weight:700;
+  background:var(--amber);
+  color:var(--ink);
+  padding:4px 9px;
+  border-radius:20px;
+  text-transform:uppercase;
+}
+.ticket-divider{
+  border-top:2px dashed var(--line);
+  margin:0 16px;
+}
+.ticket-body{padding:14px 16px;}
+.ticket-item-row{
+  display:flex;
+  justify-content:space-between;
+  font-size:13px;
+  padding:4px 0;
+  color:var(--ink);
+}
+.ticket-item-row .qty{color:var(--muted);}
+.ticket-foot{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:12px 16px;
+  border-top:1px solid var(--line);
+}
+.ticket-total{font-family:'Space Mono',monospace;font-weight:700;font-size:15px;}
+.resend-btn{
+  background:#25D366;
+  color:#fff;
+  font-weight:700;
+  font-size:12px;
+  padding:9px 14px;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+/* ============ ACCOUNT ============ */
+.account-card{
+  margin:14px 18px;
+  background:#fff;
+  border-radius:var(--radius);
+  border:1px solid var(--line);
+  padding:20px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.avatar{
+  width:54px;height:54px;
+  border-radius:50%;
+  background:var(--green);
+  color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Baloo 2',sans-serif;
+  font-size:22px;
+  font-weight:700;
+  flex-shrink:0;
+}
+.acc-name{font-size:16px;font-weight:700;}
+.acc-phone{font-size:13px;color:var(--muted);font-family:'Space Mono',monospace;}
+.menu-list{margin:0 18px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+.menu-item{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:15px 16px;
+  font-size:14px;
+  font-weight:600;
+  border-bottom:1px solid var(--line);
+}
+.menu-item:last-child{border-bottom:none;}
+.menu-item .mi-icon{font-size:18px;width:22px;text-align:center;}
+.menu-item.danger{color:var(--red);}
+
+/* ============ FOOTER NAV ============ */
+.footer-nav{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  max-width:480px;
+  margin:0 auto;
+  background:#fff;
+  border-top:1px solid var(--line);
+  display:flex;
+  z-index:50;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.nav-btn{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:3px;
+  padding:10px 4px 8px;
+  color:var(--muted);
+  position:relative;
+}
+.nav-btn.active{color:var(--green);}
+.nav-icon{font-size:20px;}
+.nav-label{font-size:10.5px;font-weight:700;}
+.nav-badge{
+  position:absolute;
+  top:4px;right:22%;
+  background:var(--red);
+  color:#fff;
+  font-size:9px;
+  font-weight:700;
+  min-width:15px;height:15px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 3px;
+}
+
+/* ============ MODAL / MAP ============ */
+.modal-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(27,46,40,0.55);
+  z-index:100;
+  display:none;
+  align-items:flex-end;
+  justify-content:center;
+}
+.modal-overlay.open{display:flex;}
+.modal-sheet{
+  background:var(--paper);
+  width:100%;
+  max-width:480px;
+  border-radius:22px 22px 0 0;
+  max-height:88vh;
+  overflow-y:auto;
+  padding-bottom:24px;
+  animation:slideUp .25s ease;
+}
+@keyframes slideUp{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.modal-handle{
+  width:38px;height:4px;
+  background:var(--line);
+  border-radius:4px;
+  margin:10px auto;
+}
+.modal-title-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:4px 18px 12px;
+}
+.modal-title-row h3{margin:0;font-size:17px;}
+.modal-close{font-size:20px;color:var(--muted);padding:4px;}
+#mapContainer{
+  height:280px;
+  margin:0 18px 14px;
+  border-radius:14px;
+  overflow:hidden;
+  border:1px solid var(--line);
+}
+.map-actions{padding:0 18px;}
+.detected-address{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:11px 12px;
+  font-size:13px;
+  margin:0 18px 12px;
+  color:var(--ink);
+}
+.gps-btn{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  background:var(--green-soft);
+  color:var(--green-dark);
+  font-weight:700;
+  font-size:13px;
+  padding:11px 14px;
+  border-radius:10px;
+  margin:0 18px 14px;
+  width:calc(100% - 36px);
+}
+
+/* ============ TOAST ============ */
+#toast{
+  position:fixed;
+  bottom:96px;
+  left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--ink);
+  color:#fff;
+  padding:11px 20px;
+  border-radius:30px;
+  font-size:13px;
+  font-weight:600;
+  z-index:200;
+  opacity:0;
+  transition:all .25s ease;
+  pointer-events:none;
+  white-space:nowrap;
+  max-width:90%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+@media (min-width:481px){
+  #loginScreen{border-radius:0;}
+  body{background:#EDEAE1;}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="loginScreen">
+  <div class="login-logo">FOODZY</div>
+  <h1 class="login-title">Food in<br>minutes.</h1>
+  <p class="login-sub">Fresh groceries, snacks & essentials delivered to your door — fast.</p>
+  <div class="login-card">
+    <label class="field-label">Your name</label>
+    <input class="field-input" id="loginName" type="text" placeholder="e.g. Aditi Sharma" autocomplete="name">
+    <label class="field-label">Phone number</label>
+    <input class="field-input" id="loginPhone" type="tel" placeholder="10-digit mobile number" maxlength="10" autocomplete="tel">
+    <button class="btn-primary" id="loginBtn">Continue →</button>
+  </div>
+  <div class="login-foot">By continuing you agree to receive your order confirmation on WhatsApp</div>
+</div>
+
+<!-- ================= APP SHELL ================= -->
+<div id="appShell">
+
+  <!-- ---- HOME ---- -->
+  <div class="view active" id="view-home">
+    <div class="topbar" id="topbar">
+      <div class="loc-row">
+        <button class="loc-btn" id="openMapFromHome">
+          <span class="loc-pin">📍</span>
+          <span>
+            <div class="loc-text-label">Delivering to</div>
+            <div class="loc-text-value" id="homeLocText">Set your location</div>
+          </span>
+        </button>
+        <span class="timer-chip on-amber">⏱ 10 MIN</span>
+      </div>
+      <div class="greet">Hi <span id="homeGreetName">there</span> 👋</div>
+      <div class="search-bar">
+        <span>🔍</span>
+        <input type="text" id="searchInput" placeholder="Search for atta, milk, chips...">
+      </div>
+    </div>
+
+    <div class="banner-wrap">
+      <div class="banner-track-outer">
+        <div class="banner-track" id="bannerTrack"></div>
+      </div>
+      <div class="banner-dots" id="bannerDots"></div>
+    </div>
+
+    <div class="section-head"><h2>Shop by category</h2></div>
+    <div class="cat-scroll" id="catScroll"></div>
+
+    <div class="section-head">
+      <h2 id="itemsSectionTitle">Popular right now</h2>
+    </div>
+    <div class="items-grid" id="itemsGrid"></div>
+  </div>
+
+  <!-- ---- BAG ---- -->
+  <div class="view" id="view-bag">
+    <div class="page-title">My Bag</div>
+    <div id="bagContent"></div>
+  </div>
+
+  <!-- ---- ORDERS ---- -->
+  <div class="view" id="view-orders">
+    <div class="page-title">My Orders</div>
+    <div id="ordersContent"></div>
+  </div>
+
+  <!-- ---- ACCOUNT ---- -->
+  <div class="view" id="view-account">
+    <div class="page-title">Account</div>
+    <div class="account-card">
+      <div class="avatar" id="acctAvatar">F</div>
+      <div>
+        <div class="acc-name" id="acctName">—</div>
+        <div class="acc-phone" id="acctPhone">—</div>
+      </div>
+    </div>
+    <div class="menu-list">
+      <div class="menu-item" id="acctEditBtn"><span class="mi-icon">✏️</span> Edit name & phone</div>
+      <div class="menu-item" id="acctAddressBtn"><span class="mi-icon">📍</span> Saved delivery address</div>
+      <div class="menu-item"><span class="mi-icon">💬</span> Chat with Foodzy support</div>
+      <div class="menu-item"><span class="mi-icon">ℹ️</span> About Foodzy</div>
+      <div class="menu-item danger" id="acctLogoutBtn"><span class="mi-icon">🚪</span> Log out</div>
+    </div>
+  </div>
+
+  <!-- ---- FOOTER NAV ---- -->
+  <div class="footer-nav">
+    <button class="nav-btn active" data-view="home"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></button>
+    <button class="nav-btn" data-view="bag"><span class="nav-icon">🛍️</span><span class="nav-label">My Bag</span><span class="nav-badge" id="bagBadge" style="display:none;">0</span></button>
+    <button class="nav-btn" data-view="orders"><span class="nav-icon">📦</span><span class="nav-label">My Orders</span></button>
+    <button class="nav-btn" data-view="account"><span class="nav-icon">👤</span><span class="nav-label">Account</span></button>
+  </div>
+</div>
+
+<!-- ================= MAP MODAL ================= -->
+<div class="modal-overlay" id="mapModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title-row">
+      <h3>Set delivery location</h3>
+      <button class="modal-close" id="closeMapModal">✕</button>
+    </div>
+    <button class="gps-btn" id="gpsBtn">🎯 Use my current location</button>
+    <div id="mapContainer"></div>
+    <div class="detected-address" id="detectedAddress">Tap the map or use current location to detect your address.</div>
+    <div class="distance-note" id="modalDistanceNote" style="margin:0 18px 12px;display:none;"></div>
+    <div class="map-actions">
+      <button class="btn-primary" id="confirmLocationBtn">Confirm location</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* =========================================================================
+   GOOGLE SHEETS BACKEND — CONFIGURE HERE
+   -------------------------------------------------------------------------
+   1. Create a Google Sheet with FOUR tabs named: Items, Banners, Coupons, Settings
+   2. Column headers (row 1) exactly as below:
+        Items    -> id,name,category,price,mrp,unit,emoji,desc,time,inStock
+        Banners  -> title,subtitle,eyebrow,color1,color2
+        Coupons  -> code,type,value,minOrder,maxDiscount,desc,active
+        Settings -> key,value   (one setting per row — see keys below)
+      (type = "flat" | "percent" | "freeship", inStock/active = TRUE/FALSE)
+
+      Settings keys (add one row per key, only the ones you want to override):
+        storeName            e.g. "Foodzy Dark Store — Connaught Place"
+        storeLat             e.g. 28.6139        (store's exact latitude)
+        storeLng             e.g. 77.2090        (store's exact longitude)
+        baseKm               e.g. 2              (flat-fee radius in km)
+        baseFee              e.g. 20             (₹ delivery fee within baseKm)
+        extraRatePer100m     e.g. 1              (₹ charged per 100m beyond baseKm)
+        freeDeliveryAbove    e.g. 199            (₹ order value for free delivery, 0 = never)
+        maxDeliveryKm        e.g. 12             (orders beyond this distance are blocked)
+
+      Example: baseKm=2, baseFee=20, extraRatePer100m=1 → a customer 2.5km away
+      pays ₹20 + (500m ÷ 100m × ₹1) = ₹25 delivery.
+   3. File → Share → "Publish to web" → pick each tab individually →
+      format: Comma-separated values (.csv) → Publish.
+   4. Copy the Sheet ID from your sheet's URL, and each tab's gid
+      (visible in the tab's publish URL, e.g. ...&gid=123456789&...)
+   5. Paste them into SHEET_CONFIG below. Leave sheetId empty to keep
+      using the built-in demo catalog & demo store location.
+   ========================================================================= */
+const SHEET_CONFIG = {
+  sheetId: "",        // e.g. "1AbCDefGhIjkLmNoPQRstuVWxyz0123456789abcd"
+  itemsGid: "0",
+  bannersGid: "",
+  couponsGid: "",
+  settingsGid: ""
+};
+const WHATSAPP_NUMBER = "918258823457"; // Foodzy order inbox
+
+/* Fallback delivery/store settings — used until a Settings sheet is connected,
+   and merged with any keys missing from the sheet. */
+const DEFAULT_SETTINGS = {
+  storeName: "Foodzy Dark Store — Connaught Place",
+  storeLat: 28.6139,
+  storeLng: 77.2090,
+  baseKm: 2,
+  baseFee: 20,
+  extraRatePer100m: 1,
+  freeDeliveryAbove: 199,
+  maxDeliveryKm: 12
+};
+let SETTINGS = {...DEFAULT_SETTINGS};
+
+/* Distance between two lat/lng points, in kilometres (haversine formula) */
+function haversineKm(lat1, lng1, lat2, lng2){
+  const R = 6371;
+  const dLat = (lat2-lat1) * Math.PI/180;
+  const dLng = (lng2-lng1) * Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+/* Delivery fee for a given distance from the store, per Settings:
+   flat baseFee within baseKm, then +extraRatePer100m for every 100m beyond it. */
+function calcDeliveryFee(distanceKm){
+  if(distanceKm <= SETTINGS.baseKm) return SETTINGS.baseFee;
+  const extraMeters = (distanceKm - SETTINGS.baseKm) * 1000;
+  const increments = Math.ceil(extraMeters/100 - 1e-6);
+  return SETTINGS.baseFee + increments * SETTINGS.extraRatePer100m;
+}
+
+/* ============ DEMO DATA (used until a Google Sheet is connected) ============ */
+const DEMO_CATEGORIES = [
+  {name:"Fruits & Vegetables", emoji:"🥦"},
+  {name:"Dairy & Bakery", emoji:"🥛"},
+  {name:"Snacks & Munchies", emoji:"🍟"},
+  {name:"Beverages", emoji:"🥤"},
+  {name:"Household", emoji:"🧴"},
+  {name:"Personal Care", emoji:"🧼"},
+];
+const DEMO_ITEMS = [
+  {id:"1",name:"Banana",category:"Fruits & Vegetables",price:40,mrp:50,unit:"1 dozen",emoji:"🍌",time:"10"},
+  {id:"2",name:"Tomato",category:"Fruits & Vegetables",price:30,mrp:35,unit:"500 g",emoji:"🍅",time:"10"},
+  {id:"3",name:"Onion",category:"Fruits & Vegetables",price:35,mrp:40,unit:"1 kg",emoji:"🧅",time:"10"},
+  {id:"4",name:"Potato",category:"Fruits & Vegetables",price:28,mrp:32,unit:"1 kg",emoji:"🥔",time:"10"},
+  {id:"5",name:"Shimla Apple",category:"Fruits & Vegetables",price:180,mrp:220,unit:"1 kg",emoji:"🍎",time:"12"},
+  {id:"6",name:"Spinach",category:"Fruits & Vegetables",price:20,mrp:25,unit:"1 bunch",emoji:"🥬",time:"10"},
+  {id:"7",name:"Full Cream Milk",category:"Dairy & Bakery",price:68,mrp:70,unit:"1 L",emoji:"🥛",time:"8"},
+  {id:"8",name:"Brown Bread",category:"Dairy & Bakery",price:45,mrp:50,unit:"400 g",emoji:"🍞",time:"8"},
+  {id:"9",name:"Paneer",category:"Dairy & Bakery",price:90,mrp:100,unit:"200 g",emoji:"🧀",time:"10"},
+  {id:"10",name:"Farm Eggs",category:"Dairy & Bakery",price:84,mrp:90,unit:"12 pcs",emoji:"🥚",time:"10"},
+  {id:"11",name:"Potato Chips",category:"Snacks & Munchies",price:20,mrp:20,unit:"52 g",emoji:"🍟",time:"9"},
+  {id:"12",name:"Chocolate Cookies",category:"Snacks & Munchies",price:55,mrp:60,unit:"150 g",emoji:"🍪",time:"9"},
+  {id:"13",name:"Namkeen Mix",category:"Snacks & Munchies",price:45,mrp:50,unit:"200 g",emoji:"🥨",time:"9"},
+  {id:"14",name:"Orange Juice",category:"Beverages",price:110,mrp:120,unit:"1 L",emoji:"🧃",time:"10"},
+  {id:"15",name:"Cola",category:"Beverages",price:40,mrp:45,unit:"750 ml",emoji:"🥤",time:"9"},
+  {id:"16",name:"Instant Coffee",category:"Beverages",price:145,mrp:160,unit:"100 g",emoji:"☕",time:"10"},
+  {id:"17",name:"Dishwash Liquid",category:"Household",price:99,mrp:110,unit:"500 ml",emoji:"🧴",time:"12"},
+  {id:"18",name:"Toilet Cleaner",category:"Household",price:85,mrp:95,unit:"500 ml",emoji:"🚽",time:"12"},
+  {id:"19",name:"Toothpaste",category:"Personal Care",price:55,mrp:60,unit:"100 g",emoji:"🪥",time:"10"},
+  {id:"20",name:"Handwash",category:"Personal Care",price:65,mrp:75,unit:"250 ml",emoji:"🧼",time:"10"},
+];
+const DEMO_BANNERS = [
+  {eyebrow:"QUICK COMMERCE", title:"Groceries in 10 minutes", subtitle:"Fresh, fast, right to your door", color1:"#0E7C4A", color2:"#0A5C38"},
+  {eyebrow:"USE CODE FOODZY50", title:"Flat ₹50 off your order", subtitle:"On orders above ₹299", color1:"#FFA630", color2:"#E88A00"},
+  {eyebrow:"NO MINIMUM DRAMA", title:"Free delivery above ₹199", subtitle:"Just groceries, delivered quick", color1:"#2C7DA0", color2:"#1B4965"},
+  {eyebrow:"SNACK ATTACK", title:"Chips, cookies & more", subtitle:"In your bag in minutes", color1:"#E85D4A", color2:"#B23A2A"},
+];
+const DEMO_COUPONS = [
+  {code:"FOODZY50", type:"flat", value:50, minOrder:299, maxDiscount:50, desc:"Flat ₹50 off orders above ₹299"},
+  {code:"WELCOME10", type:"percent", value:10, minOrder:199, maxDiscount:100, desc:"10% off orders above ₹199 (max ₹100)"},
+  {code:"FREESHIP", type:"freeship", value:0, minOrder:0, maxDiscount:0, desc:"Free delivery on your order"},
+];
+
+/* ============ STATE ============ */
+let ITEMS = [], BANNERS = [], COUPONS = [], CATEGORIES = [];
+let state = {
+  user: loadJSON("foodzy_user", null),
+  cart: loadJSON("foodzy_cart", {}),          // {itemId: qty}
+  address: loadJSON("foodzy_address", {name:"",phone:"",address:"",lat:null,lng:null,distanceKm:null}),
+  orders: loadJSON("foodzy_orders", []),
+  appliedCoupon: loadJSON("foodzy_coupon", null),
+  activeCategory: "All",
+  currentView: "home",
+  bannerIndex: 0,
+  mapPickLat: null,
+  mapPickLng: null,
+};
+
+function loadJSON(key, fallback){
+  try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+  catch(e){ return fallback; }
+}
+function saveJSON(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+
+/* ============ CSV PARSER ============ */
+function parseCSV(text){
+  const rows=[]; let row=[], field='', inQuotes=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(inQuotes){
+      if(c==='"'){ if(text[i+1]==='"'){field+='"';i++;} else {inQuotes=false;} }
+      else field+=c;
+    } else {
+      if(c==='"') inQuotes=true;
+      else if(c===','){row.push(field);field='';}
+      else if(c==='\n'){row.push(field);rows.push(row);row=[];field='';}
+      else if(c==='\r'){ /* skip */ }
+      else field+=c;
+    }
+  }
+  if(field.length||row.length){row.push(field);rows.push(row);}
+  if(!rows.length) return [];
+  const headers = rows.shift().map(h=>h.trim());
+  return rows.filter(r=>r.some(f=>f && f.trim()!=='')).map(r=>{
+    const obj={};
+    headers.forEach((h,idx)=>obj[h]=(r[idx]||'').trim());
+    return obj;
+  });
+}
+
+async function fetchSheetTab(gid){
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_CONFIG.sheetId}/export?format=csv&gid=${gid}`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error("sheet fetch failed");
+  return parseCSV(await res.text());
+}
+
+async function loadBackend(){
+  if(!SHEET_CONFIG.sheetId){
+    ITEMS = DEMO_ITEMS; BANNERS = DEMO_BANNERS; COUPONS = DEMO_COUPONS;
+    CATEGORIES = DEMO_CATEGORIES; SETTINGS = {...DEFAULT_SETTINGS};
+    return;
+  }
+  const failedTabs = [];
+
+  try{
+    const itemRows = await fetchSheetTab(SHEET_CONFIG.itemsGid || "0");
+    if(!itemRows.length) throw new Error("0 rows returned — check headers row and sharing settings");
+    ITEMS = itemRows.filter(r=>r.inStock===undefined || /true|yes|1/i.test(r.inStock)).map(r=>({
+      id:r.id, name:r.name, category:r.category, price:parseFloat(r.price)||0,
+      mrp:parseFloat(r.mrp)||parseFloat(r.price)||0, unit:r.unit, emoji:r.emoji||"🛒",
+      time:r.time||"10"
+    }));
+    const catSet = [...new Set(ITEMS.map(i=>i.category))];
+    CATEGORIES = catSet.map(c=>({name:c, emoji: (ITEMS.find(i=>i.category===c)||{}).emoji || "🛒"}));
+  }catch(e){
+    console.error("Foodzy: Items sheet failed to load —", e.message);
+    ITEMS = DEMO_ITEMS; CATEGORIES = DEMO_CATEGORIES; failedTabs.push("Items");
+  }
+
+  try{
+    if(SHEET_CONFIG.bannersGid){
+      const bRows = await fetchSheetTab(SHEET_CONFIG.bannersGid);
+      if(!bRows.length) throw new Error("0 rows returned");
+      BANNERS = bRows.map(r=>({eyebrow:r.eyebrow||"FOODZY", title:r.title, subtitle:r.subtitle, color1:r.color1||"#0E7C4A", color2:r.color2||"#0A5C38"}));
+    } else BANNERS = DEMO_BANNERS;
+  }catch(e){
+    console.error("Foodzy: Banners sheet failed to load —", e.message);
+    BANNERS = DEMO_BANNERS; if(SHEET_CONFIG.bannersGid) failedTabs.push("Banners");
+  }
+
+  try{
+    if(SHEET_CONFIG.couponsGid){
+      const cRows = await fetchSheetTab(SHEET_CONFIG.couponsGid);
+      if(!cRows.length) throw new Error("0 rows returned");
+      COUPONS = cRows.filter(r=>r.active===undefined || /true|yes|1/i.test(r.active)).map(r=>({
+        code:(r.code||"").toUpperCase(), type:r.type, value:parseFloat(r.value)||0,
+        minOrder:parseFloat(r.minOrder)||0, maxDiscount:parseFloat(r.maxDiscount)||9999, desc:r.desc
+      }));
+    } else COUPONS = DEMO_COUPONS;
+  }catch(e){
+    console.error("Foodzy: Coupons sheet failed to load —", e.message);
+    COUPONS = DEMO_COUPONS; if(SHEET_CONFIG.couponsGid) failedTabs.push("Coupons");
+  }
+
+  try{
+    if(SHEET_CONFIG.settingsGid){
+      const sRows = await fetchSheetTab(SHEET_CONFIG.settingsGid);
+      if(!sRows.length) throw new Error("0 rows returned");
+      const numericKeys = ["storeLat","storeLng","baseKm","baseFee","extraRatePer100m","freeDeliveryAbove","maxDeliveryKm"];
+      const merged = {...DEFAULT_SETTINGS};
+      sRows.forEach(r=>{
+        const key = (r.key||"").trim();
+        if(!key) return;
+        merged[key] = numericKeys.includes(key) ? (parseFloat(r.value) || 0) : r.value;
+      });
+      SETTINGS = merged;
+    } else SETTINGS = {...DEFAULT_SETTINGS};
+  }catch(e){
+    console.error("Foodzy: Settings sheet failed to load —", e.message);
+    SETTINGS = {...DEFAULT_SETTINGS}; if(SHEET_CONFIG.settingsGid) failedTabs.push("Settings");
+  }
+
+  if(failedTabs.length){
+    showToast(`Couldn't load ${failedTabs.join(', ')} from your sheet — using demo data (see console for details)`);
+  }
+}
+
+/* ============ TOAST ============ */
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ============ LOGIN ============ */
+const loginScreen = document.getElementById('loginScreen');
+const appShell = document.getElementById('appShell');
+
+document.getElementById('loginBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('loginName').value.trim();
+  const phone = document.getElementById('loginPhone').value.trim();
+  if(!name){ showToast("Please enter your name"); return; }
+  if(!/^\d{10}$/.test(phone)){ showToast("Enter a valid 10-digit phone number"); return; }
+  state.user = {name, phone};
+  saveJSON("foodzy_user", state.user);
+  if(!state.address.name) state.address.name = name;
+  if(!state.address.phone) state.address.phone = phone;
+  saveJSON("foodzy_address", state.address);
+  enterApp();
+});
+
+function enterApp(){
+  loginScreen.style.display = 'none';
+  appShell.classList.add('visible');
+  document.getElementById('homeGreetName').textContent = state.user.name.split(' ')[0];
+  document.getElementById('acctAvatar').textContent = state.user.name.charAt(0).toUpperCase();
+  document.getElementById('acctName').textContent = state.user.name;
+  document.getElementById('acctPhone').textContent = "+91 " + state.user.phone;
+  updateLocationDisplay();
+  init();
+}
+
+/* ============ INIT ============ */
+async function init(){
+  await loadBackend();
+  if(state.address.lat!=null && state.address.distanceKm==null){
+    state.address.distanceKm = haversineKm(SETTINGS.storeLat, SETTINGS.storeLng, state.address.lat, state.address.lng);
+    saveJSON("foodzy_address", state.address);
+  }
+  updateLocationDisplay();
+  renderBanners();
+  renderCategories();
+  renderItems();
+  renderBag();
+  renderOrders();
+  updateBagBadge();
+  startBannerAutoplay();
+  autoDetectLocationOnce();
+}
+
+/* ============ BANNERS ============ */
+function renderBanners(){
+  const track = document.getElementById('bannerTrack');
+  const dots = document.getElementById('bannerDots');
+  track.innerHTML = BANNERS.map(b=>`
+    <div class="banner-slide" style="background:linear-gradient(135deg, ${b.color1}, ${b.color2});">
+      <div class="banner-eyebrow">${escapeHtml(b.eyebrow||'FOODZY')}</div>
+      <div class="banner-title">${escapeHtml(b.title||'')}</div>
+      <div class="banner-sub">${escapeHtml(b.subtitle||'')}</div>
+    </div>
+  `).join('');
+  dots.innerHTML = BANNERS.map((_,i)=>`<span class="banner-dot ${i===0?'active':''}"></span>`).join('');
+  state.bannerIndex = 0;
+}
+let bannerInterval;
+function startBannerAutoplay(){
+  clearInterval(bannerInterval);
+  if(BANNERS.length<2) return;
+  bannerInterval = setInterval(()=>{
+    state.bannerIndex = (state.bannerIndex+1) % BANNERS.length;
+    updateBannerPosition();
+  }, 4200);
+}
+function updateBannerPosition(){
+  document.getElementById('bannerTrack').style.transform = `translateX(-${state.bannerIndex*100}%)`;
+  document.querySelectorAll('.banner-dot').forEach((d,i)=>d.classList.toggle('active', i===state.bannerIndex));
+}
+// swipe support
+(function(){
+  const track = document.getElementById('bannerTrack');
+  let startX=0, dx=0, dragging=false;
+  track.addEventListener('touchstart', e=>{ startX=e.touches[0].clientX; dragging=true; }, {passive:true});
+  track.addEventListener('touchmove', e=>{ if(dragging) dx = e.touches[0].clientX - startX; }, {passive:true});
+  track.addEventListener('touchend', ()=>{
+    if(!dragging) return;
+    if(dx < -40) state.bannerIndex = Math.min(state.bannerIndex+1, BANNERS.length-1);
+    else if(dx > 40) state.bannerIndex = Math.max(state.bannerIndex-1, 0);
+    dragging=false; dx=0;
+    updateBannerPosition();
+  });
+})();
+
+/* ============ CATEGORIES ============ */
+function renderCategories(){
+  const wrap = document.getElementById('catScroll');
+  const all = [{name:"All", emoji:"🛒"}, ...CATEGORIES];
+  wrap.innerHTML = all.map(c=>`
+    <button class="cat-chip ${state.activeCategory===c.name?'active':''}" data-cat="${escapeAttr(c.name)}">
+      <span class="cat-emoji">${c.emoji}</span>
+      <span class="cat-label">${escapeHtml(c.name)}</span>
+    </button>
+  `).join('');
+  wrap.querySelectorAll('.cat-chip').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      state.activeCategory = btn.getAttribute('data-cat');
+      document.getElementById('itemsSectionTitle').textContent = state.activeCategory==="All" ? "Popular right now" : state.activeCategory;
+      renderCategories();
+      renderItems();
+    });
+  });
+}
+
+/* ============ ITEMS ============ */
+function renderItems(){
+  const grid = document.getElementById('itemsGrid');
+  const query = (document.getElementById('searchInput').value||"").toLowerCase().trim();
+  let list = ITEMS;
+  if(state.activeCategory !== "All") list = list.filter(i=>i.category===state.activeCategory);
+  if(query) list = list.filter(i=>i.name.toLowerCase().includes(query));
+
+  if(!list.length){
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+      <div class="empty-emoji">🔍</div>
+      <div class="empty-title">No items found</div>
+      <div class="empty-sub">Try a different search or category</div>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(item=>{
+    const qty = state.cart[item.id] || 0;
+    return `
+    <div class="item-card" data-id="${escapeAttr(item.id)}">
+      <div class="item-emoji-box">${item.emoji}</div>
+      <span class="item-time-badge">⏱ ${escapeHtml(item.time||'10')} min</span>
+      <div class="item-name">${escapeHtml(item.name)}</div>
+      <div class="item-unit">${escapeHtml(item.unit||'')}</div>
+      <div class="item-bottom">
+        <div class="item-price-row">
+          <span class="item-price">₹${item.price}</span>
+          ${item.mrp && item.mrp>item.price ? `<span class="item-mrp">₹${item.mrp}</span>` : ``}
+        </div>
+        <div class="qty-zone">
+          ${qty>0 ? `
+            <div class="qty-stepper">
+              <button class="qty-minus">−</button>
+              <span class="qty-num">${qty}</span>
+              <button class="qty-plus">+</button>
+            </div>` : `<button class="add-btn">ADD</button>`}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.item-card').forEach(card=>{
+    const id = card.getAttribute('data-id');
+    const addBtn = card.querySelector('.add-btn');
+    const minus = card.querySelector('.qty-minus');
+    const plus = card.querySelector('.qty-plus');
+    if(addBtn) addBtn.addEventListener('click', ()=>changeQty(id, 1));
+    if(minus) minus.addEventListener('click', ()=>changeQty(id, -1));
+    if(plus) plus.addEventListener('click', ()=>changeQty(id, 1));
+  });
+}
+
+function changeQty(id, delta){
+  const current = state.cart[id] || 0;
+  const next = Math.max(0, current + delta);
+  if(next===0) delete state.cart[id];
+  else state.cart[id] = next;
+  saveJSON("foodzy_cart", state.cart);
+  renderItems();
+  renderBag();
+  updateBagBadge();
+  if(delta>0) showToast("Added to bag");
+}
+
+document.getElementById('searchInput').addEventListener('input', renderItems);
+
+/* ============ BAG BADGE ============ */
+function cartCount(){ return Object.values(state.cart).reduce((a,b)=>a+b,0); }
+function updateBagBadge(){
+  const badge = document.getElementById('bagBadge');
+  const count = cartCount();
+  if(count>0){ badge.style.display='flex'; badge.textContent = count; }
+  else badge.style.display='none';
+}
+
+/* ============ BILL CALC ============ */
+function computeBill(){
+  let subtotal = 0;
+  Object.entries(state.cart).forEach(([id,qty])=>{
+    const item = ITEMS.find(i=>i.id===id);
+    if(item) subtotal += item.price * qty;
+  });
+
+  const distanceKm = state.address.distanceKm;
+  let deliveryFee = 0;
+  let outOfRange = false;
+  if(subtotal>0){
+    deliveryFee = (distanceKm!=null) ? calcDeliveryFee(distanceKm) : SETTINGS.baseFee;
+    if(SETTINGS.maxDeliveryKm && distanceKm!=null && distanceKm > SETTINGS.maxDeliveryKm) outOfRange = true;
+    if(SETTINGS.freeDeliveryAbove && subtotal >= SETTINGS.freeDeliveryAbove) deliveryFee = 0;
+  }
+
+  let discount = 0;
+  const coupon = state.appliedCoupon;
+  if(coupon && subtotal >= coupon.minOrder){
+    if(coupon.type==='flat') discount = Math.min(coupon.value, subtotal);
+    else if(coupon.type==='percent') discount = Math.min(subtotal*(coupon.value/100), coupon.maxDiscount||9999);
+    else if(coupon.type==='freeship') deliveryFee = 0;
+  }
+  const total = Math.max(0, subtotal - discount + deliveryFee);
+  return {subtotal, discount, deliveryFee, total, coupon, distanceKm, outOfRange};
+}
+
+/* ============ BAG VIEW ============ */
+function renderBag(){
+  const wrap = document.getElementById('bagContent');
+  const entries = Object.entries(state.cart);
+  if(!entries.length){
+    wrap.innerHTML = `<div class="empty-state">
+      <div class="empty-emoji">🛍️</div>
+      <div class="empty-title">Your bag is empty</div>
+      <div class="empty-sub">Add fresh groceries & essentials to get started</div>
+      <button class="btn-primary amber" style="width:auto;padding:12px 24px;" id="browseBtn">Browse items</button>
+    </div>`;
+    document.getElementById('browseBtn').addEventListener('click', ()=>switchView('home'));
+    return;
+  }
+
+  const bill = computeBill();
+
+  let html = `<div class="bag-list">`;
+  entries.forEach(([id, qty])=>{
+    const item = ITEMS.find(i=>i.id===id);
+    if(!item) return;
+    html += `
+    <div class="bag-row">
+      <div class="bag-emoji">${item.emoji}</div>
+      <div class="bag-info">
+        <div class="bag-name">${escapeHtml(item.name)}</div>
+        <div class="bag-unit">${escapeHtml(item.unit||'')}</div>
+        <div class="bag-price">₹${item.price * qty}</div>
+      </div>
+      <div class="qty-stepper" data-id="${escapeAttr(id)}">
+        <button class="qty-minus">−</button>
+        <span class="qty-num">${qty}</span>
+        <button class="qty-plus">+</button>
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  // Coupon block
+  html += `<div class="card-block">
+    <h3>🏷️ Apply coupon</h3>
+    ${bill.coupon ? `
+      <div class="coupon-applied">
+        <span>"${escapeHtml(bill.coupon.code)}" applied — ${escapeHtml(bill.coupon.desc||'')}</span>
+        <button id="removeCouponBtn">Remove</button>
+      </div>
+    ` : `
+      <div class="coupon-row">
+        <input type="text" id="couponInput" placeholder="Enter coupon code">
+        <button class="coupon-apply-btn" id="applyCouponBtn">Apply</button>
+      </div>
+      <div class="coupon-chip-list">
+        ${COUPONS.map(c=>`<button class="coupon-suggest" data-code="${escapeAttr(c.code)}">${escapeHtml(c.code)}</button>`).join('')}
+      </div>
+    `}
+  </div>`;
+
+  // Bill summary
+  html += `<div class="card-block">
+    <h3>🧾 Bill summary</h3>
+    <div class="bill-row"><span>Item total</span><span class="amt">₹${bill.subtotal}</span></div>
+    ${bill.discount>0 ? `<div class="bill-row discount"><span>Coupon discount</span><span class="amt">−₹${bill.discount.toFixed(0)}</span></div>` : ``}
+    <div class="bill-row"><span>Delivery fee</span><span class="amt">${bill.deliveryFee===0?'FREE':'₹'+bill.deliveryFee}</span></div>
+    <div class="bill-row total"><span>To pay</span><span class="amt">₹${bill.total.toFixed(0)}</span></div>
+  </div>`;
+
+  // Address block
+  const addr = state.address;
+  html += `<div class="card-block">
+    <h3>📍 Delivery address</h3>
+    <button class="map-pick-btn" id="pickOnMapBtn">🗺️ ${addr.lat ? 'Change location on map' : 'Set location on map'}</button>
+    ${addr.lat && bill.distanceKm!=null ? `
+      <div class="distance-note ${bill.outOfRange?'warn':''}">
+        📏 ${bill.distanceKm.toFixed(1)} km from ${escapeHtml(SETTINGS.storeName)} ·
+        ${bill.outOfRange ? `outside our ${SETTINGS.maxDeliveryKm} km delivery range` : `delivery fee ₹${calcDeliveryFee(bill.distanceKm).toFixed(0)}`}
+      </div>
+    ` : ``}
+    <div class="field-row">
+      <label>Full name</label>
+      <input type="text" id="addrName" value="${escapeAttr(addr.name||'')}" placeholder="Full name">
+    </div>
+    <div class="field-row">
+      <label>Phone number</label>
+      <input type="tel" id="addrPhone" value="${escapeAttr(addr.phone||'')}" maxlength="10" placeholder="10-digit phone number">
+    </div>
+    <div class="field-row">
+      <label>Full address</label>
+      <textarea id="addrFull" rows="3" placeholder="House / flat no., street, landmark, city, pincode">${escapeHtml(addr.address||'')}</textarea>
+    </div>
+  </div>`;
+
+  html += `<div class="place-order-bar">
+    ${bill.outOfRange ? `<div class="distance-note warn" style="margin-bottom:8px;">We can't deliver this far yet — please pick a closer location.</div>` : ``}
+    <button class="btn-primary" id="placeOrderBtn" ${bill.outOfRange?'disabled':''}>Place order · ₹${bill.total.toFixed(0)}</button>
+  </div>`;
+
+  wrap.innerHTML = html;
+
+  // events
+  wrap.querySelectorAll('.qty-stepper').forEach(el=>{
+    const id = el.getAttribute('data-id');
+    if(!id) return;
+    el.querySelector('.qty-minus').addEventListener('click', ()=>changeQty(id,-1));
+    el.querySelector('.qty-plus').addEventListener('click', ()=>changeQty(id,1));
+  });
+  const applyBtn = document.getElementById('applyCouponBtn');
+  if(applyBtn) applyBtn.addEventListener('click', ()=>applyCoupon(document.getElementById('couponInput').value));
+  wrap.querySelectorAll('.coupon-suggest').forEach(btn=>{
+    btn.addEventListener('click', ()=>applyCoupon(btn.getAttribute('data-code')));
+  });
+  const removeBtn = document.getElementById('removeCouponBtn');
+  if(removeBtn) removeBtn.addEventListener('click', ()=>{
+    state.appliedCoupon = null;
+    saveJSON("foodzy_coupon", null);
+    renderBag();
+  });
+  document.getElementById('pickOnMapBtn').addEventListener('click', openMapModal);
+  document.getElementById('addrName').addEventListener('input', e=>{ state.address.name = e.target.value; saveJSON("foodzy_address", state.address); });
+  document.getElementById('addrPhone').addEventListener('input', e=>{ state.address.phone = e.target.value; saveJSON("foodzy_address", state.address); });
+  document.getElementById('addrFull').addEventListener('input', e=>{ state.address.address = e.target.value; saveJSON("foodzy_address", state.address); });
+  document.getElementById('placeOrderBtn').addEventListener('click', placeOrder);
+}
+
+function applyCoupon(rawCode){
+  const code = (rawCode||"").trim().toUpperCase();
+  if(!code){ showToast("Enter a coupon code"); return; }
+  const coupon = COUPONS.find(c=>c.code.toUpperCase()===code);
+  const bill = computeBill();
+  if(!coupon){ showToast("Invalid coupon code"); return; }
+  if(bill.subtotal < coupon.minOrder){ showToast(`Add items worth ₹${coupon.minOrder} to use this coupon`); return; }
+  state.appliedCoupon = coupon;
+  saveJSON("foodzy_coupon", coupon);
+  showToast(`Coupon "${coupon.code}" applied!`);
+  renderBag();
+}
+
+/* ============ PLACE ORDER ============ */
+function placeOrder(){
+  const entries = Object.entries(state.cart);
+  if(!entries.length){ showToast("Your bag is empty"); return; }
+  const addr = state.address;
+  if(!addr.name || !addr.name.trim()){ showToast("Please enter your full name"); return; }
+  if(!/^\d{10}$/.test(addr.phone||'')){ showToast("Please enter a valid 10-digit phone number"); return; }
+  if(!addr.address || addr.address.trim().length<8){ showToast("Please enter your full delivery address"); return; }
+
+  const bill = computeBill();
+  if(bill.outOfRange){ showToast(`Sorry, that's outside our ${SETTINGS.maxDeliveryKm} km delivery range`); return; }
+  const orderItems = entries.map(([id,qty])=>{
+    const item = ITEMS.find(i=>i.id===id);
+    return item ? {name:item.name, unit:item.unit, qty, price:item.price, lineTotal:item.price*qty} : null;
+  }).filter(Boolean);
+
+  const orderId = "FZ" + Date.now().toString().slice(-8);
+  const order = {
+    id: orderId,
+    date: new Date().toISOString(),
+    items: orderItems,
+    subtotal: bill.subtotal,
+    discount: bill.discount,
+    deliveryFee: bill.deliveryFee,
+    total: bill.total,
+    coupon: bill.coupon ? bill.coupon.code : null,
+    distanceKm: bill.distanceKm,
+    storeName: SETTINGS.storeName,
+    address: {...addr}
+  };
+
+  state.orders.unshift(order);
+  saveJSON("foodzy_orders", state.orders);
+
+  // build WhatsApp message
+  let msg = `🛒 *New Order — Foodzy*\n`;
+  msg += `Order ID: ${orderId}\n`;
+  msg += `Date: ${new Date(order.date).toLocaleString()}\n\n`;
+  msg += `👤 Name: ${addr.name}\n📞 Phone: ${addr.phone}\n📍 Address: ${addr.address}\n`;
+  if(addr.lat && addr.lng){
+    msg += `🗺️ Map: https://maps.google.com/?q=${addr.lat},${addr.lng}\n`;
+  }
+  if(bill.distanceKm!=null){
+    msg += `📏 Distance from ${SETTINGS.storeName}: ${bill.distanceKm.toFixed(1)} km\n`;
+  }
+  msg += `\n*Items:*\n`;
+  orderItems.forEach((it,idx)=>{
+    msg += `${idx+1}. ${it.name} (${it.unit}) x${it.qty} — ₹${it.lineTotal}\n`;
+  });
+  msg += `\nItem total: ₹${bill.subtotal}\n`;
+  if(bill.discount>0) msg += `Coupon (${order.coupon}): −₹${bill.discount.toFixed(0)}\n`;
+  msg += `Delivery fee: ${bill.deliveryFee===0?'FREE':'₹'+bill.deliveryFee}\n`;
+  msg += `*Total to pay: ₹${bill.total.toFixed(0)}*\n\n`;
+  msg += `Please confirm my order. Thank you! — via Foodzy`;
+
+  const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+  window.open(waUrl, '_blank');
+
+  // clear cart & coupon
+  state.cart = {};
+  state.appliedCoupon = null;
+  saveJSON("foodzy_cart", state.cart);
+  saveJSON("foodzy_coupon", null);
+  updateBagBadge();
+  renderItems();
+  renderOrders();
+  switchView('orders');
+  showToast("Order placed! Confirm on WhatsApp.");
+}
+
+/* ============ ORDERS VIEW ============ */
+function renderOrders(){
+  const wrap = document.getElementById('ordersContent');
+  if(!state.orders.length){
+    wrap.innerHTML = `<div class="empty-state">
+      <div class="empty-emoji">📦</div>
+      <div class="empty-title">No orders yet</div>
+      <div class="empty-sub">Your placed orders will show up here</div>
+      <button class="btn-primary amber" style="width:auto;padding:12px 24px;" id="browseBtn2">Start shopping</button>
+    </div>`;
+    document.getElementById('browseBtn2').addEventListener('click', ()=>switchView('home'));
+    return;
+  }
+  wrap.innerHTML = state.orders.map(order=>`
+    <div class="ticket">
+      <div class="ticket-head">
+        <span class="ticket-id">#${order.id}</span>
+        <span class="ticket-status">Sent to Foodzy</span>
+      </div>
+      <div class="ticket-date" style="padding:6px 16px 0;color:var(--muted);">${new Date(order.date).toLocaleString()}</div>
+      <div class="ticket-divider" style="margin-top:10px;"></div>
+      <div class="ticket-body">
+        ${order.items.map(it=>`
+          <div class="ticket-item-row">
+            <span>${escapeHtml(it.name)} <span class="qty">x${it.qty}</span></span>
+            <span class="mono">₹${it.lineTotal}</span>
+          </div>
+        `).join('')}
+        ${order.coupon ? `<div class="ticket-item-row" style="color:var(--green-dark);"><span>Coupon ${escapeHtml(order.coupon)}</span><span class="mono">−₹${order.discount.toFixed(0)}</span></div>` : ``}
+      </div>
+      <div class="ticket-foot">
+        <span class="ticket-total">₹${order.total.toFixed(0)}</span>
+        <button class="resend-btn" data-id="${escapeAttr(order.id)}">💬 Resend</button>
+      </div>
+    </div>
+  `).join('');
+
+  wrap.querySelectorAll('.resend-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>resendOrder(btn.getAttribute('data-id')));
+  });
+}
+
+function resendOrder(orderId){
+  const order = state.orders.find(o=>o.id===orderId);
+  if(!order) return;
+  let msg = `🛒 *Order Follow-up — Foodzy*\nOrder ID: ${order.id}\n\n`;
+  msg += `👤 Name: ${order.address.name}\n📞 Phone: ${order.address.phone}\n📍 Address: ${order.address.address}\n\n`;
+  msg += `*Items:*\n`;
+  order.items.forEach((it,idx)=>{ msg += `${idx+1}. ${it.name} (${it.unit}) x${it.qty} — ₹${it.lineTotal}\n`; });
+  msg += `\n*Total: ₹${order.total.toFixed(0)}*\n\nFollowing up on this order — please confirm status. Thank you!`;
+  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+/* ============ ACCOUNT ============ */
+document.getElementById('acctEditBtn').addEventListener('click', ()=>{
+  const name = prompt("Your name", state.user.name);
+  if(name===null) return;
+  const phone = prompt("Your phone number", state.user.phone);
+  if(phone===null) return;
+  if(!name.trim() || !/^\d{10}$/.test(phone.trim())){ showToast("Please enter a valid name & 10-digit phone"); return; }
+  state.user = {name:name.trim(), phone:phone.trim()};
+  saveJSON("foodzy_user", state.user);
+  document.getElementById('homeGreetName').textContent = state.user.name.split(' ')[0];
+  document.getElementById('acctAvatar').textContent = state.user.name.charAt(0).toUpperCase();
+  document.getElementById('acctName').textContent = state.user.name;
+  document.getElementById('acctPhone').textContent = "+91 " + state.user.phone;
+  showToast("Profile updated");
+});
+document.getElementById('acctAddressBtn').addEventListener('click', ()=>switchView('bag'));
+document.getElementById('acctLogoutBtn').addEventListener('click', ()=>{
+  if(!confirm("Log out of Foodzy?")) return;
+  localStorage.removeItem("foodzy_user");
+  location.reload();
+});
+
+/* ============ VIEW SWITCHING ============ */
+function switchView(view){
+  state.currentView = view;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.getAttribute('data-view')===view));
+  if(view==='bag') renderBag();
+  if(view==='orders') renderOrders();
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>switchView(btn.getAttribute('data-view')));
+});
+
+/* ============ MAP MODAL (Leaflet + OpenStreetMap, free) ============ */
+let leafletMap, leafletMarker, storeMarker, mapInitialized=false, leafletBroken=false;
+const mapModal = document.getElementById('mapModal');
+
+function getStoreIcon(){
+  return L.divIcon({
+    className:'',
+    html:`<div style="background:#1B2E28;color:#fff;width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);"><span style="transform:rotate(45deg);font-size:14px;">🏬</span></div>`,
+    iconSize:[30,30], iconAnchor:[15,28]
+  });
+}
+
+function openMapModal(){
+  if(typeof L === 'undefined'){
+    showToast("Map couldn't load — check your internet connection and try again");
+    return;
+  }
+  mapModal.classList.add('open');
+  setTimeout(()=>{
+    if(!mapInitialized){
+      try{
+        const startLat = state.address.lat || SETTINGS.storeLat;
+        const startLng = state.address.lng || SETTINGS.storeLng;
+        leafletMap = L.map('mapContainer').setView([startLat,startLng], state.address.lat?16:14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom:19,
+          attribution:'&copy; OpenStreetMap contributors'
+        }).addTo(leafletMap);
+        storeMarker = L.marker([SETTINGS.storeLat, SETTINGS.storeLng], {icon:getStoreIcon(), interactive:false}).addTo(leafletMap);
+        storeMarker.bindTooltip(SETTINGS.storeName, {direction:'top', offset:[0,-24]});
+        leafletMarker = L.marker([startLat,startLng], {draggable:true}).addTo(leafletMap);
+        leafletMarker.on('dragend', ()=>{
+          const p = leafletMarker.getLatLng();
+          setMapPick(p.lat, p.lng);
+        });
+        leafletMap.on('click', (e)=>{
+          leafletMarker.setLatLng(e.latlng);
+          setMapPick(e.latlng.lat, e.latlng.lng);
+        });
+        mapInitialized = true;
+        if(state.address.lat){
+          setMapPick(state.address.lat, state.address.lng, true);
+        } else {
+          detectGPS();
+        }
+      }catch(e){
+        console.error("Map failed to initialize:", e);
+        showToast("Map couldn't load — you can still type your address manually");
+      }
+    }
+    if(leafletMap) leafletMap.invalidateSize();
+  }, 150);
+}
+document.getElementById('openMapFromHome').addEventListener('click', openMapModal);
+document.getElementById('closeMapModal').addEventListener('click', ()=>mapModal.classList.remove('open'));
+mapModal.addEventListener('click', (e)=>{ if(e.target===mapModal) mapModal.classList.remove('open'); });
+
+function detectGPS(){
+  if(!navigator.geolocation){ showToast("Location not supported on this device"); return; }
+  showToast("Detecting your location...");
+  navigator.geolocation.getCurrentPosition((pos)=>{
+    const {latitude, longitude} = pos.coords;
+    if(leafletMap){
+      leafletMap.setView([latitude,longitude], 16);
+      leafletMarker.setLatLng([latitude,longitude]);
+    }
+    setMapPick(latitude, longitude);
+  }, (err)=>{
+    showToast("Couldn't detect location — pick a point on the map instead");
+  }, {enableHighAccuracy:true, timeout:8000});
+}
+document.getElementById('gpsBtn').addEventListener('click', detectGPS);
+
+function updateModalDistance(lat, lng){
+  const note = document.getElementById('modalDistanceNote');
+  const distanceKm = haversineKm(SETTINGS.storeLat, SETTINGS.storeLng, lat, lng);
+  const fee = calcDeliveryFee(distanceKm);
+  const outOfRange = SETTINGS.maxDeliveryKm && distanceKm > SETTINGS.maxDeliveryKm;
+  note.style.display = 'block';
+  note.classList.toggle('warn', !!outOfRange);
+  note.textContent = outOfRange
+    ? `📏 ${distanceKm.toFixed(1)} km from ${SETTINGS.storeName} — outside our ${SETTINGS.maxDeliveryKm} km delivery range`
+    : `📏 ${distanceKm.toFixed(1)} km from ${SETTINGS.storeName} · delivery fee ₹${fee.toFixed(0)}`;
+  return distanceKm;
+}
+
+async function setMapPick(lat, lng, skipGeocode){
+  state.mapPickLat = lat; state.mapPickLng = lng;
+  updateModalDistance(lat, lng);
+  const box = document.getElementById('detectedAddress');
+  box.textContent = "Locating address...";
+  try{
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+    const data = await res.json();
+    const display = data.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    box.textContent = display;
+    box.setAttribute('data-address', display);
+  }catch(e){
+    box.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)} (couldn't fetch address text — you can edit manually)`;
+    box.setAttribute('data-address', '');
+  }
+}
+
+document.getElementById('confirmLocationBtn').addEventListener('click', ()=>{
+  if(state.mapPickLat==null){ showToast("Tap the map to choose your location"); return; }
+  state.address.lat = state.mapPickLat;
+  state.address.lng = state.mapPickLng;
+  state.address.distanceKm = haversineKm(SETTINGS.storeLat, SETTINGS.storeLng, state.mapPickLat, state.mapPickLng);
+  const detected = document.getElementById('detectedAddress').getAttribute('data-address');
+  if(detected && (!state.address.address || state.address.address.trim()==='')){
+    state.address.address = detected;
+  }
+  saveJSON("foodzy_address", state.address);
+  updateLocationDisplay();
+  mapModal.classList.remove('open');
+  if(state.currentView==='bag') renderBag();
+  showToast("Location saved");
+});
+
+/* Auto location detection — runs quietly once after login if no address is
+   saved yet. Uses the browser's geolocation permission prompt; if the
+   customer denies or it's unavailable, they can still set location manually. */
+function autoDetectLocationOnce(){
+  if(state.address.lat || !navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition((pos)=>{
+    const {latitude, longitude} = pos.coords;
+    state.address.lat = latitude;
+    state.address.lng = longitude;
+    state.address.distanceKm = haversineKm(SETTINGS.storeLat, SETTINGS.storeLng, latitude, longitude);
+    saveJSON("foodzy_address", state.address);
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`)
+      .then(r=>r.json())
+      .then(data=>{
+        if(data.display_name && !state.address.address){
+          state.address.address = data.display_name;
+          saveJSON("foodzy_address", state.address);
+        }
+        updateLocationDisplay();
+        if(state.currentView==='bag') renderBag();
+      })
+      .catch(()=>{ updateLocationDisplay(); });
+  }, ()=>{ /* silently ignore — user can set location manually */ }, {enableHighAccuracy:true, timeout:8000});
+}
+
+function updateLocationDisplay(){
+  const el = document.getElementById('homeLocText');
+  if(state.address.lat && state.address.address){
+    el.textContent = state.address.address.split(',').slice(0,2).join(',');
+  } else if(state.address.address){
+    el.textContent = state.address.address.split(',').slice(0,2).join(',');
+  } else {
+    el.textContent = "Set your location";
+  }
+}
+
+/* ============ SCROLL SHADOW ============ */
+window.addEventListener('scroll', ()=>{
+  document.getElementById('topbar').classList.toggle('scrolled', window.scrollY>4);
+});
+
+/* ============ UTIL ============ */
+function escapeHtml(str){
+  return String(str==null?'':str).replace(/[&<>"']/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
+function escapeAttr(str){ return escapeHtml(str); }
+
+/* ============ BOOTSTRAP ============ */
+if(state.user && state.user.name && state.user.phone){
+  document.getElementById('loginName').value = state.user.name;
+  document.getElementById('loginPhone').value = state.user.phone;
+  enterApp();
+}
+
+})();
+</script>
+</body>
+</html>
