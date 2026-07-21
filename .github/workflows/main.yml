@@ -1,4 +1,4 @@
-name: Build Foodzy APK and AAB
+name: Build Foodzy APK and Signed AAB
 
 on:
   push:
@@ -33,36 +33,38 @@ jobs:
 
     - name: Create Project & Build APK/AAB
       run: |
-        # 1. Cordova project banayein
-        cordova create foodzy_project com.foodzy.app "Foodzy"
-        
-        # 2. Project folder me jayein
+        # Naye package ID com.foodzy.customerapp ke sath project banayein
+        cordova create foodzy_project com.foodzy.customerapp "Foodzy"
         cd foodzy_project
         
-        # 3. Default files delete karein
         rm -rf www/*
         rm -f config.xml
         
-        # 4. Apni source files copy karein
         cp ../index.html www/
         cp ../config.xml .
         
-        # 5. Android platform add karein
         cordova platform add android@13.0.0 --no-telemetry
         
-        # 6. Gradle options set karein memory aur deprecation fixes ke liye
         export GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx2048m -Dorg.gradle.daemon=false"
         
-        # 7. Debug APK build karein (Verbose log ke sath)
+        # 1. Debug APK Build
         cordova build android --debug --no-telemetry -- --gradleArg=-Dorg.gradle.daemon=false
         
-        # 8. Release AAB bundle build karein
+        # 2. Release AAB Build
         cordova build android --release --no-telemetry -- --packageType=bundle --gradleArg=-Dorg.gradle.daemon=false
 
-    - name: Upload APK and AAB to GitHub
+    - name: Generate Keystore & Sign AAB
+      run: |
+        cd foodzy_project/platforms/android/app/build/outputs/bundle/release/
+        
+        # Keystore generate karke AAB ko digitally sign karein
+        keytool -genkey -v -keystore release.keystore -alias foodzy_alias -keyalg RSA -keysize 2048 -validity 10000 -storepass foodzy123 -keypass foodzy123 -dname "CN=Foodzy, OU=App, O=Foodzy, L=Kailashahar, ST=Tripura, C=IN"
+        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore release.keystore -storepass foodzy123 -keypass foodzy123 app-release.aab foodzy_alias
+
+    - name: Upload Signed APK and AAB to GitHub
       uses: actions/upload-artifact@v4
       with:
-        name: Foodzy-Android-Builds
+        name: Foodzy-Signed-Builds
         path: |
           foodzy_project/platforms/android/app/build/outputs/apk/debug/app-debug.apk
           foodzy_project/platforms/android/app/build/outputs/bundle/release/app-release.aab
