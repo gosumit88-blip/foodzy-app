@@ -33,27 +33,27 @@ jobs:
 
     - name: Create Project & Build APK/AAB
       run: |
-        # 1. Cordova project banayein Foodzy ke liye
+        # 1. Cordova project create karein
         cordova create foodzy_project com.foodzy.app "Foodzy"
         
-        # 2. Project folder me jaao
+        # 2. Project folder ke andar jayein
         cd foodzy_project
         
-        # 3. Default files delete karein
+        # 3. Default config clear karein
         rm -rf www/*
         rm -f config.xml
         
-        # 4. Apni index.html aur config.xml copy karein
+        # 4. Apni source files copy karein
         cp ../index.html www/
         cp ../config.xml .
         
         # 5. Android platform add karein
-        cordova platform add android --no-telemetry
+        cordova platform add android@12.0.0 --no-telemetry
         
         # 6. Debug APK build karein
-        cordova build android --no-telemetry
+        cordova build android --debug --no-telemetry
         
-        # 7. Release AAB bundle build karein (Play Store ke liye)
+        # 7. Play Store ke liye Release AAB build karein
         cordova build android --release -- --packageType=bundle --no-telemetry
 
     - name: Upload APK and AAB to GitHub
