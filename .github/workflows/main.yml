@@ -1,0 +1,65 @@
+name: Build Foodzy APK and AAB
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+
+    - name: Set up Java (JDK 17)
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Set up Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Cordova
+      run: npm install -g cordova
+
+    - name: Create Project & Build APK/AAB
+      run: |
+        # 1. Cordova project banayein Foodzy ke liye
+        cordova create foodzy_project com.foodzy.app "Foodzy"
+        
+        # 2. Project folder me jaao
+        cd foodzy_project
+        
+        # 3. Default files delete karein
+        rm -rf www/*
+        rm -f config.xml
+        
+        # 4. Apni index.html aur config.xml copy karein
+        cp ../index.html www/
+        cp ../config.xml .
+        
+        # 5. Android platform add karein
+        cordova platform add android --no-telemetry
+        
+        # 6. Debug APK build karein
+        cordova build android --no-telemetry
+        
+        # 7. Release AAB bundle build karein (Play Store ke liye)
+        cordova build android --release -- --packageType=bundle --no-telemetry
+
+    - name: Upload APK and AAB to GitHub
+      uses: actions/upload-artifact@v4
+      with:
+        name: Foodzy-Android-Builds
+        path: |
+          foodzy_project/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+          foodzy_project/platforms/android/app/build/outputs/bundle/release/app-release.aab
