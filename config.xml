@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.foodzy.app" version="1.0.0" xmlns="http://cordova.apache.org/ns/1.0" xmlns:cdv="http://cordova.apache.org/ns/1.0/1.0">
+    <name>Foodzy</name>
+    <description>Foodzy - Online Food Delivery App</description>
+    <author email="support@foodzy.com" href="http://foodzy.com">Foodzy Team</author>
+    
+    <content src="index.html" />
+    <access origin="*" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    
+    <!-- Food delivery app ke liye location permission support -->
+    <plugin name="cordova-plugin-geolocation" />
+    <plugin name="cordova-plugin-whitelist" />
+    
+    <preference name="Orientation" value="portrait" />
+</widget>
