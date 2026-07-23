@@ -16,9 +16,6 @@
     <allow-intent href="mailto:*" />
     <allow-intent href="geo:*" />
 
-    <!-- App icon (falls back to this for any density not explicitly declared below) -->
-    <icon src="www/icons/icon-512.png" />
-
     <!-- ===== General Preferences ===== -->
     <preference name="Orientation" value="portrait" />
     <preference name="Fullscreen" value="false" />
