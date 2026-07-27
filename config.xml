@@ -50,11 +50,5 @@
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS"/>
 </config-file>
-<!--  App icon per density (optional — uses the top-level <icon> above
-             as a fallback for any size you don't provide). Add more of your
-             own generated sizes here if you have them: ldpi, mdpi, hdpi,
-             xhdpi, xxhdpi, xxxhdpi.  -->
-<icon src="www/icons/icon-512.png" density="xxxhdpi"/>
-<icon src="www/icons/icon-192.png" density="mdpi"/>
 </platform>
 </widget>
