@@ -349,6 +349,79 @@ a{color:inherit;}
 .cat-label{font-size:11px;font-weight:700;text-align:center;line-height:1.2;}
 
 /* ============ ITEMS GRID ============ */
+/* ============ RESTAURANT LIST (Home) — Swiggy-style cards ============ */
+.restaurant-list{padding:14px 18px 20px;}
+.restaurant-card{
+  background:#fff;border:1px solid var(--line);border-radius:18px;
+  overflow:hidden;margin-bottom:18px;
+  box-shadow:0 3px 12px rgba(27,46,40,0.07);
+}
+.restaurant-card:active{transform:scale(0.99);}
+.restaurant-card-image-wrap{position:relative;}
+.restaurant-card-image{
+  width:100%;height:152px;
+  background:var(--green-soft);
+  display:flex;align-items:center;justify-content:center;
+  font-size:52px;
+  overflow:hidden;
+}
+.restaurant-card-image.img{font-size:0;}
+.restaurant-card-image img{width:100%;height:100%;object-fit:cover;display:block;}
+.restaurant-time-badge{
+  position:absolute;bottom:10px;left:10px;
+  background:rgba(27,46,40,0.85);color:#fff;
+  font-family:'Space Mono',monospace;font-size:11px;font-weight:700;
+  padding:5px 10px;border-radius:20px;
+}
+.restaurant-time-badge.closed-badge{
+  background:rgba(232,93,74,0.92);
+  font-family:'Inter',sans-serif;
+}
+.restaurant-card.restaurant-closed{
+  cursor:default;
+}
+.restaurant-card.restaurant-closed .restaurant-card-image,
+.restaurant-card.restaurant-closed .restaurant-card-image img{
+  filter:grayscale(100%);
+  opacity:0.75;
+}
+.restaurant-card.restaurant-closed .restaurant-card-body{
+  opacity:0.6;
+}
+.restaurant-card.restaurant-closed .restaurant-card-chevron{
+  color:var(--red);font-weight:700;
+}
+.restaurant-card-body{padding:13px 15px 12px;}
+.restaurant-card-name{font-size:16px;font-weight:700;font-family:'Baloo 2',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.restaurant-card-cuisine{font-size:12.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.restaurant-card-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:10px;padding-top:10px;border-top:1.5px dashed var(--line);
+}
+.restaurant-card-items{font-size:11.5px;color:var(--green-dark);font-weight:700;}
+.restaurant-card-chevron{font-size:13px;color:var(--muted);}
+
+/* ============ RESTAURANT MENU ============ */
+.menu-header{
+  padding:16px 18px 14px;
+  background:var(--paper);
+  position:sticky;top:0;z-index:20;
+  border-bottom:1px solid var(--line);
+}
+.menu-back-btn{
+  font-size:12.5px;font-weight:700;color:var(--green-dark);
+  background:var(--green-soft);padding:8px 14px;border-radius:20px;
+  margin-bottom:14px;
+}
+.menu-header-info{display:flex;align-items:center;gap:12px;}
+.menu-header-thumb{
+  width:56px;height:56px;border-radius:12px;background:var(--green-soft);
+  display:flex;align-items:center;justify-content:center;font-size:26px;overflow:hidden;flex-shrink:0;
+}
+.menu-header-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.menu-restaurant-name{font-size:17px;font-weight:700;}
+.menu-restaurant-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+
 .items-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -667,10 +740,13 @@ a{color:inherit;}
 }
 
 .place-order-bar{
-  position:sticky;
-  bottom:78px;
+  position:fixed;
+  bottom:78px;left:0;right:0;
+  max-width:480px;
+  margin:0 auto;
   padding:12px 18px 18px;
-  background:linear-gradient(to top, var(--paper) 60%, rgba(251,249,244,0));
+  background:linear-gradient(to top, var(--paper) 75%, rgba(251,249,244,0));
+  z-index:40;
 }
 
 /* ============ ORDERS ============ */
@@ -918,6 +994,11 @@ a{color:inherit;}
     <input class="field-input" id="loginName" type="text" placeholder="e.g. Aditi Sharma" autocomplete="name">
     <label class="field-label">Phone number</label>
     <input class="field-input" id="loginPhone" type="tel" placeholder="10-digit mobile number" maxlength="10" autocomplete="tel">
+    <label class="field-label">Choose your area</label>
+    <select class="field-input" id="loginArea">
+      <option value="">— Select your area —</option>
+      <option value="Kailashahar, Tripura">KAILASHAHAR, TRIPURA</option>
+    </select>
     <button class="btn-primary" id="loginBtn">Continue →</button>
   </div>
   <div class="login-foot">By continuing you agree to receive your order confirmation on WhatsApp</div>
@@ -942,7 +1023,7 @@ a{color:inherit;}
       <div class="greet">Hi <span id="homeGreetName">there</span> 👋</div>
       <div class="search-bar">
         <span>🔍</span>
-        <input type="text" id="searchInput" placeholder="Search for atta, milk, chips...">
+        <input type="text" id="searchInput" placeholder="Search restaurants or cuisines...">
       </div>
     </div>
 
@@ -953,13 +1034,33 @@ a{color:inherit;}
       <div class="banner-dots" id="bannerDots"></div>
     </div>
 
-    <div class="section-head"><h2>Shop by category</h2></div>
-    <div class="cat-scroll" id="catScroll"></div>
+    <div class="section-head"><h2>Restaurants near you</h2></div>
+    <div class="restaurant-list" id="restaurantList"></div>
+  </div>
+
+  <!-- ---- RESTAURANT MENU ---- -->
+  <div class="view" id="view-restaurant-menu">
+    <div class="menu-header" id="menuHeader">
+      <button class="menu-back-btn" id="menuBackBtn">← Back to restaurants</button>
+      <div class="menu-header-info">
+        <div class="menu-header-thumb" id="menuHeaderThumb">🍴</div>
+        <div>
+          <div class="menu-restaurant-name" id="menuRestaurantName">Restaurant</div>
+          <div class="menu-restaurant-meta" id="menuRestaurantMeta"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="search-bar" style="margin:14px 18px 0;">
+      <span>🔍</span>
+      <input type="text" id="menuSearchInput" placeholder="Search this menu...">
+    </div>
 
     <div class="section-head">
-      <h2 id="itemsSectionTitle">Popular right now</h2>
+      <h2 id="menuSectionTitle">Full menu</h2>
     </div>
-    <div class="items-grid" id="itemsGrid"></div>
+    <div class="cat-scroll" id="menuCatScroll"></div>
+    <div class="items-grid" id="menuItemsGrid"></div>
   </div>
 
   <!-- ---- BAG ---- -->
@@ -1045,69 +1146,90 @@ a{color:inherit;}
    GOOGLE APPS SCRIPT BACKEND — CONFIGURE HERE
    -------------------------------------------------------------------------
    1. In your Google Sheet: Extensions → Apps Script, paste the doGet(e)
-      function (the one you already have) that returns:
-        { items:[...], banners:[...], coupons:[...], settings:[...] }
-      when called with no "type" parameter (the default/"all" branch).
+      function that returns:
+        { items:[...], stores:[...], banners:[...], coupons:[...], settings:[...] }
+      when called with no "type" parameter (the default/"all" branch). If
+      you set this up before multi-store support, add "stores" to that
+      returned object — see the Code.gs snippet Foodzy gave you.
    2. Deploy → New deployment → type "Web app" → Execute as "Me" →
       Who has access "Anyone" → Deploy. Copy the resulting URL
       (it ends in /exec).
    3. Paste that URL into APPS_SCRIPT_URL below. Leave it empty to keep
-      using the built-in demo catalog & demo store location.
+      using the built-in demo catalog & demo stores.
 
-   Sheet tabs & columns (same as before — Apps Script just reads these
-   same tabs and returns them as JSON instead of CSV):
-        Items    -> id,name,category,price,mrp,unit,emoji,image,desc,time,inStock,variants
+   Sheet tabs & columns:
+        Items    -> id,name,category,price,mrp,unit,emoji,image,desc,time,inStock,storeId,variants
+        Stores   -> id,name,lat,lng,baseKm,baseFee,extraRatePer100m,maxDeliveryKm
         Banners  -> title,subtitle,eyebrow,color1,color2
         Coupons  -> code,type,value,minOrder,maxDiscount,desc,active
-        Settings -> key,value   (one setting per row — see keys below)
+        Settings -> key,value   (currently just freeDeliveryAbove — see below)
       (type = "flat" | "percent" | "freeship", inStock/active = TRUE/FALSE)
 
+      Stores sheet (add one row per physical store/dark-store):
+        id                   short unique code, e.g. "store1" — this is what
+                             Items/variants reference to say which store they
+                             ship from
+        name                 shown to customers, e.g. "Foodzy — Saket"
+        lat / lng            store's exact coordinates
+        baseKm               flat-fee radius in km for THIS store
+        baseFee              ₹ delivery fee within baseKm for THIS store
+        extraRatePer100m     ₹ charged per 100m beyond baseKm for THIS store
+        maxDeliveryKm        orders beyond this distance from THIS store are blocked
+      Example: baseKm=2, baseFee=20, extraRatePer100m=1 → a customer 2.5km
+      from that store pays ₹20 + (500m ÷ 100m × ₹1) = ₹25 for that store's items.
+
       Items sheet notes:
+        storeId   -> which Store (by id) this item ships from by default.
+                     Leave blank to use the first store in your Stores sheet.
         image     -> a direct image URL (e.g. from Google Drive "share as image"
                      link, Imgur, or your own hosting). Leave blank to fall
                      back to the emoji — a broken/blank URL also falls back
                      to the emoji automatically, so it's safe either way.
         variants  -> leave blank for a single-price item. To offer size/weight
-                     options, use "label:price:mrp:available" pairs separated
-                     by | :
-                       500 ml:38:40:TRUE|1 L:68:70:TRUE|2 L:130:140:FALSE
+                     options, use "label:price:mrp:available:storeId" pairs
+                     separated by | :
+                       500 ml:38:40:TRUE:store1|1 L:68:70:TRUE:store2
                      mrp is optional per variant (defaults to that variant's
                      price). available is optional too (defaults to TRUE) —
                      set a variant to FALSE to keep it visible in the app but
-                     greyed out and un-orderable (e.g. temporarily out of
-                     stock), instead of removing it from the sheet entirely.
-                     Customers tap "ADD" and pick an option before it's added
-                     to their bag.
+                     greyed out and un-orderable. storeId is optional per
+                     variant too — leave it blank to inherit the item's own
+                     storeId (most variants will just do this; only set it
+                     when that specific size ships from a different store
+                     than the rest of the item). Customers tap "ADD" and pick
+                     an option before it's added to their bag.
 
-      Settings keys (add one row per key, only the ones you want to override):
-        storeName            e.g. "Foodzy Dark Store — Connaught Place"
-        storeLat             e.g. 28.6139        (store's exact latitude)
-        storeLng             e.g. 77.2090        (store's exact longitude)
-        baseKm               e.g. 2              (flat-fee radius in km)
-        baseFee              e.g. 20             (₹ delivery fee within baseKm)
-        extraRatePer100m     e.g. 1              (₹ charged per 100m beyond baseKm)
-        freeDeliveryAbove    e.g. 199            (₹ order value for free delivery, 0 = never)
-        maxDeliveryKm        e.g. 12             (orders beyond this distance are blocked)
+      If a customer's bag has items from more than one store, Foodzy
+      calculates delivery distance/fee separately for each store and adds
+      them together — the bag page shows a breakdown per store, and the
+      WhatsApp order message groups items under each store's name so
+      nothing gets mixed up.
 
-      Example: baseKm=2, baseFee=20, extraRatePer100m=1 → a customer 2.5km away
-      pays ₹20 + (500m ÷ 100m × ₹1) = ₹25 delivery.
+      Settings keys (global, apply across all stores):
+        freeDeliveryAbove    e.g. 199  (₹ order value for free delivery on
+                             each store's portion of the order, 0 = never)
    ========================================================================= */
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtVNgdgyPbIh6D4PnRlVRuMvXF7izg_d78Kkyd9qCoS9iQ1swQiCLGzewXPoutu631/exec"; // e.g. "https://script.google.com/macros/s/AKfycb.../exec"
 const WHATSAPP_NUMBER = "918258823457"; // Foodzy order inbox
 
-/* Fallback delivery/store settings — used until a Settings sheet is connected,
-   and merged with any keys missing from the sheet. */
+/* Global settings (not tied to any one store) — used until a Settings sheet
+   is connected, and merged with any keys missing from the sheet. */
 const DEFAULT_SETTINGS = {
-  storeName: "Foodzy Dark Store — Connaught Place",
-  storeLat: 28.6139,
-  storeLng: 77.2090,
-  baseKm: 2,
-  baseFee: 20,
-  extraRatePer100m: 1,
-  freeDeliveryAbove: 199,
-  maxDeliveryKm: 12
+  freeDeliveryAbove: 199
 };
 let SETTINGS = {...DEFAULT_SETTINGS};
+
+/* Fallback stores — used until a Stores sheet is connected. Each store has
+   its own location and its own delivery pricing, since different stores can
+   sit at different distances from a customer. */
+const DEFAULT_STORES = [
+  {id:"store1", name:"Spice Route Kitchen", image:"", cuisine:"North Indian, Mughlai", emoji:"🍛", deliveryTime:"30-35 min", isOpen:true, lat:28.6139, lng:77.2090, baseKm:2, baseFee:20, extraRatePer100m:1, maxDeliveryKm:12},
+  {id:"store2", name:"Wok & Roll", image:"", cuisine:"Chinese, Thai", emoji:"🥡", deliveryTime:"25-30 min", isOpen:false, lat:28.5245, lng:77.2066, baseKm:2, baseFee:20, extraRatePer100m:1, maxDeliveryKm:12}
+];
+let STORES = [...DEFAULT_STORES];
+function getStore(storeId){
+  return STORES.find(s=>s.id===storeId) || STORES[0] || null;
+}
 
 /* Distance between two lat/lng points, in kilometres (haversine formula) */
 function haversineKm(lat1, lng1, lat2, lng2){
@@ -1118,45 +1240,61 @@ function haversineKm(lat1, lng1, lat2, lng2){
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-/* Delivery fee for a given distance from the store, per Settings:
+/* Delivery fee for a given distance from a specific store:
    flat baseFee within baseKm, then +extraRatePer100m for every 100m beyond it. */
-function calcDeliveryFee(distanceKm){
-  if(distanceKm <= SETTINGS.baseKm) return SETTINGS.baseFee;
-  const extraMeters = (distanceKm - SETTINGS.baseKm) * 1000;
+function calcDeliveryFee(distanceKm, store){
+  store = store || STORES[0] || {baseKm:2, baseFee:20, extraRatePer100m:1};
+  if(distanceKm <= store.baseKm) return store.baseFee;
+  const extraMeters = (distanceKm - store.baseKm) * 1000;
   const increments = Math.ceil(extraMeters/100 - 1e-6);
-  return SETTINGS.baseFee + increments * SETTINGS.extraRatePer100m;
+  return store.baseFee + increments * store.extraRatePer100m;
 }
+
+/* Straight-line nearest store to a given lat/lng — used to show a helpful
+   "closest store" hint on the map picker (the real per-order delivery fee
+   is calculated per-store from the actual cart contents, in computeBill). */
+function nearestStore(lat, lng){
+  let best = null;
+  STORES.forEach(store=>{
+    const d = haversineKm(store.lat, store.lng, lat, lng);
+    if(!best || d < best.distanceKm) best = {store, distanceKm: d};
+  });
+  return best;
+}
+
 
 /* ============ DEMO DATA (used until a Google Sheet is connected) ============ */
 const DEMO_CATEGORIES = [
-  {name:"Fruits & Vegetables", emoji:"🥦"},
-  {name:"Dairy & Bakery", emoji:"🥛"},
-  {name:"Snacks & Munchies", emoji:"🍟"},
-  {name:"Beverages", emoji:"🥤"},
-  {name:"Household", emoji:"🧴"},
-  {name:"Personal Care", emoji:"🧼"},
+  {name:"Starters", emoji:"🧆"},
+  {name:"Main Course", emoji:"🍛"},
+  {name:"Breads", emoji:"🫓"},
+  {name:"Rice & Biryani", emoji:"🍚"},
+  {name:"Soups", emoji:"🍜"},
+  {name:"Noodles & Rice", emoji:"🍜"},
+  {name:"Desserts", emoji:"🍮"},
 ];
 const DEMO_ITEMS = [
-  {id:"1",name:"Banana",category:"Fruits & Vegetables",price:40,mrp:50,unit:"1 dozen",emoji:"🍌",image:"",desc:"Naturally ripened, farm-fresh bananas",time:"10",variants:""},
-  {id:"2",name:"Tomato",category:"Fruits & Vegetables",price:30,mrp:35,unit:"500 g",emoji:"🍅",image:"",desc:"Juicy, hand-picked red tomatoes",time:"10",variants:""},
-  {id:"3",name:"Onion",category:"Fruits & Vegetables",price:35,mrp:40,unit:"1 kg",emoji:"🧅",image:"",desc:"Fresh red onions, sourced daily",time:"10",variants:""},
-  {id:"4",name:"Potato",category:"Fruits & Vegetables",price:28,mrp:32,unit:"1 kg",emoji:"🥔",image:"",desc:"Farm-fresh potatoes, great for curries",time:"10",variants:""},
-  {id:"5",name:"Shimla Apple",category:"Fruits & Vegetables",price:180,mrp:220,unit:"1 kg",emoji:"🍎",image:"",desc:"Crisp, sweet apples from Himachal orchards",time:"12",variants:""},
-  {id:"6",name:"Spinach",category:"Fruits & Vegetables",price:20,mrp:25,unit:"1 bunch",emoji:"🥬",image:"",desc:"Washed, ready-to-cook spinach leaves",time:"10",variants:""},
-  {id:"7",name:"Full Cream Milk",category:"Dairy & Bakery",price:68,mrp:70,unit:"1 L",emoji:"🥛",image:"",desc:"Pasteurized full cream milk, rich in taste",time:"8",variants:"500 ml:38:40|1 L:68:70|2 L:130:140"},
-  {id:"8",name:"Brown Bread",category:"Dairy & Bakery",price:45,mrp:50,unit:"400 g",emoji:"🍞",image:"",desc:"Soft multigrain brown bread, baked fresh",time:"8",variants:""},
-  {id:"9",name:"Paneer",category:"Dairy & Bakery",price:90,mrp:100,unit:"200 g",emoji:"🧀",image:"",desc:"Soft, fresh cottage cheese",time:"10",variants:""},
-  {id:"10",name:"Farm Eggs",category:"Dairy & Bakery",price:84,mrp:90,unit:"12 pcs",emoji:"🥚",image:"",desc:"Farm-fresh brown eggs, rich in protein",time:"10",variants:"6 pcs:44:46|12 pcs:84:90|30 pcs:195:210"},
-  {id:"11",name:"Potato Chips",category:"Snacks & Munchies",price:20,mrp:20,unit:"52 g",emoji:"🍟",image:"",desc:"Crispy, classic salted potato chips",time:"9",variants:""},
-  {id:"12",name:"Chocolate Cookies",category:"Snacks & Munchies",price:55,mrp:60,unit:"150 g",emoji:"🍪",image:"",desc:"Crunchy cookies loaded with choco chips",time:"9",variants:""},
-  {id:"13",name:"Namkeen Mix",category:"Snacks & Munchies",price:45,mrp:50,unit:"200 g",emoji:"🥨",image:"",desc:"Spicy and savoury Indian snack mix",time:"9",variants:""},
-  {id:"14",name:"Orange Juice",category:"Beverages",price:110,mrp:120,unit:"1 L",emoji:"🧃",image:"",desc:"100% real orange juice, no added sugar",time:"10",variants:""},
-  {id:"15",name:"Cola",category:"Beverages",price:40,mrp:45,unit:"750 ml",emoji:"🥤",image:"",desc:"Chilled, fizzy cola soft drink",time:"9",variants:"250 ml:20:20:TRUE|750 ml:40:45:TRUE|1.25 L:60:65:FALSE"},
-  {id:"16",name:"Instant Coffee",category:"Beverages",price:145,mrp:160,unit:"100 g",emoji:"☕",image:"",desc:"Rich, aromatic instant coffee granules",time:"10",variants:""},
-  {id:"17",name:"Dishwash Liquid",category:"Household",price:99,mrp:110,unit:"500 ml",emoji:"🧴",image:"",desc:"Removes tough grease, gentle on hands",time:"12",variants:""},
-  {id:"18",name:"Toilet Cleaner",category:"Household",price:85,mrp:95,unit:"500 ml",emoji:"🚽",image:"",desc:"Kills 99.9% germs, long-lasting fragrance",time:"12",variants:""},
-  {id:"19",name:"Toothpaste",category:"Personal Care",price:55,mrp:60,unit:"100 g",emoji:"🪥",image:"",desc:"Cavity protection with mint freshness",time:"10",variants:""},
-  {id:"20",name:"Handwash",category:"Personal Care",price:65,mrp:75,unit:"250 ml",emoji:"🧼",image:"",desc:"Germ-protection liquid handwash",time:"10",variants:""},
+  // ---- Spice Route Kitchen (store1) — North Indian, Mughlai ----
+  {id:"1",name:"Paneer Tikka",category:"Starters",price:220,mrp:240,unit:"8 pcs",emoji:"🧆",image:"",desc:"Smoky, marinated cottage cheese grilled to perfection",time:"25",storeId:"store1",variants:""},
+  {id:"2",name:"Chicken Seekh Kebab",category:"Starters",price:260,mrp:280,unit:"6 pcs",emoji:"🍢",image:"",desc:"Minced chicken skewers, char-grilled with spices",time:"25",storeId:"store1",variants:""},
+  {id:"3",name:"Butter Chicken",category:"Main Course",price:320,mrp:350,unit:"Full",emoji:"🍛",image:"",desc:"Rich, creamy tomato-based chicken curry",time:"30",storeId:"store1",variants:"Half:180:200:TRUE|Full:320:350:TRUE"},
+  {id:"4",name:"Dal Makhani",category:"Main Course",price:220,mrp:240,unit:"Full",emoji:"🍲",image:"",desc:"Slow-cooked black lentils in butter & cream",time:"25",storeId:"store1",variants:"Half:130:145:TRUE|Full:220:240:TRUE"},
+  {id:"5",name:"Paneer Butter Masala",category:"Main Course",price:260,mrp:280,unit:"Full",emoji:"🧈",image:"",desc:"Cottage cheese in a velvety tomato-butter gravy",time:"25",storeId:"store1",variants:""},
+  {id:"6",name:"Butter Naan",category:"Breads",price:45,mrp:50,unit:"1 pc",emoji:"🫓",image:"",desc:"Soft tandoor-baked bread brushed with butter",time:"15",storeId:"store1",variants:""},
+  {id:"7",name:"Tandoori Roti",category:"Breads",price:30,mrp:35,unit:"1 pc",emoji:"🫓",image:"",desc:"Whole-wheat bread baked in a clay tandoor",time:"15",storeId:"store1",variants:""},
+  {id:"8",name:"Chicken Biryani",category:"Rice & Biryani",price:280,mrp:300,unit:"Full",emoji:"🍚",image:"",desc:"Fragrant basmati rice layered with spiced chicken",time:"35",storeId:"store1",variants:"Half:160:175:TRUE|Full:280:300:TRUE"},
+  {id:"9",name:"Veg Biryani",category:"Rice & Biryani",price:220,mrp:240,unit:"Full",emoji:"🍚",image:"",desc:"Aromatic basmati rice with mixed vegetables",time:"30",storeId:"store1",variants:"Half:130:145:TRUE|Full:220:240:TRUE"},
+  {id:"10",name:"Gulab Jamun",category:"Desserts",price:90,mrp:100,unit:"2 pcs",emoji:"🍮",image:"",desc:"Soft milk-solid dumplings soaked in sugar syrup",time:"10",storeId:"store1",variants:""},
+
+  // ---- Wok & Roll (store2) — Chinese, Thai ----
+  {id:"11",name:"Hot & Sour Soup",category:"Soups",price:140,mrp:150,unit:"Bowl",emoji:"🍜",image:"",desc:"Tangy, spicy Indo-Chinese soup with veggies",time:"15",storeId:"store2",variants:""},
+  {id:"12",name:"Manchow Soup",category:"Soups",price:140,mrp:150,unit:"Bowl",emoji:"🥣",image:"",desc:"Spiced vegetable soup topped with crispy noodles",time:"15",storeId:"store2",variants:""},
+  {id:"13",name:"Veg Spring Rolls",category:"Starters",price:180,mrp:200,unit:"6 pcs",emoji:"🥟",image:"",desc:"Crispy rolls stuffed with fresh vegetables",time:"20",storeId:"store2",variants:""},
+  {id:"14",name:"Chilli Chicken",category:"Starters",price:260,mrp:280,unit:"Full",emoji:"🌶️",image:"",desc:"Wok-tossed chicken in a spicy, tangy sauce",time:"25",storeId:"store2",variants:"Half:150:165:TRUE|Full:260:280:TRUE"},
+  {id:"15",name:"Veg Fried Rice",category:"Noodles & Rice",price:200,mrp:220,unit:"Full",emoji:"🍚",image:"",desc:"Wok-tossed rice with fresh vegetables",time:"20",storeId:"store2",variants:"Half:120:130:TRUE|Full:200:220:TRUE"},
+  {id:"16",name:"Chicken Hakka Noodles",category:"Noodles & Rice",price:240,mrp:260,unit:"Full",emoji:"🍜",image:"",desc:"Classic stir-fried noodles with chicken & veggies",time:"20",storeId:"store2",variants:""},
+  {id:"17",name:"Thai Green Curry",category:"Main Course",price:300,mrp:320,unit:"Full",emoji:"🍛",image:"",desc:"Creamy coconut curry with Thai herbs & vegetables",time:"25",storeId:"store2",variants:""},
+  {id:"18",name:"Chilli Paneer",category:"Main Course",price:240,mrp:260,unit:"Full",emoji:"🧆",image:"",desc:"Cottage cheese tossed in a spicy Indo-Chinese sauce",time:"25",storeId:"store2",variants:"Half:140:155:TRUE|Full:240:260:TRUE"},
 ];
 const DEMO_BANNERS = [
   {eyebrow:"QUICK COMMERCE", title:"Groceries in 10 minutes", subtitle:"Fresh, fast, right to your door", color1:"#0E7C4A", color2:"#0A5C38"},
@@ -1182,7 +1320,8 @@ function parseVariants(str, basePrice, baseMrp){
     const price = bits[1]!==undefined && bits[1]!=='' ? parseFloat(bits[1]) : basePrice;
     const mrp = bits[2]!==undefined && bits[2]!=='' ? parseFloat(bits[2]) : (price||basePrice);
     const available = bits[3]!==undefined && bits[3]!=='' ? /^(true|yes|1)$/i.test(bits[3]) : true;
-    return label ? {label, price: price||0, mrp: mrp||price||0, available} : null;
+    const storeId = bits[4] || null; // null = inherit the item's own storeId
+    return label ? {label, price: price||0, mrp: mrp||price||0, available, storeId} : null;
   }).filter(Boolean);
   return list.length ? list : null;
 }
@@ -1198,9 +1337,21 @@ function normalizeItem(r){
     image: (r.image||"").trim(),
     desc: (r.desc||"").trim(),
     time: r.time || "10",
+    storeId: (r.storeId && String(r.storeId).trim()) || (STORES[0] && STORES[0].id) || null,
     variants: parseVariants(r.variants, price, mrp)
   };
 }
+
+/* Which store a cart line actually ships from: the variant's own storeId if
+   it set one, otherwise the item's default storeId. */
+function resolveStoreId(item, variantLabel){
+  if(variantLabel && item.variants){
+    const v = item.variants.find(v=>v.label===variantLabel);
+    if(v && v.storeId) return v.storeId;
+  }
+  return item.storeId;
+}
+
 
 function cartKeyFor(itemId, variantLabel){ return variantLabel ? (itemId+"::"+variantLabel) : String(itemId); }
 function parseCartKey(key){
@@ -1217,7 +1368,8 @@ function getCartLineInfo(cartKey){
     const v = item.variants.find(v=>v.label===variantLabel);
     if(v){ price=v.price; mrp=v.mrp; unit=v.label; variant=v.label; }
   }
-  return {item, variant, price, mrp, unit};
+  const storeId = resolveStoreId(item, variantLabel);
+  return {item, variant, price, mrp, unit, storeId};
 }
 function totalQtyForItem(itemId){
   return Object.entries(state.cart).reduce((sum,[key,qty])=>{
@@ -1247,6 +1399,8 @@ let state = {
   appliedCoupon: loadJSON("foodzy_coupon", null),
   instructions: loadJSON("foodzy_instructions", ""),
   activeCategory: "All",
+  currentRestaurantId: null,
+  menuActiveCategory: "All",
   currentView: "home",
   bannerIndex: 0,
   mapPickLat: null,
@@ -1268,6 +1422,7 @@ async function fetchAppsScript(){
 
 async function loadBackend(){
   if(!APPS_SCRIPT_URL){
+    STORES = [...DEFAULT_STORES];
     ITEMS = DEMO_ITEMS.map(normalizeItem); BANNERS = DEMO_BANNERS; COUPONS = DEMO_COUPONS;
     CATEGORIES = DEMO_CATEGORIES; SETTINGS = {...DEFAULT_SETTINGS};
     return;
@@ -1278,10 +1433,34 @@ async function loadBackend(){
     data = await fetchAppsScript();
   }catch(e){
     console.error("Foodzy: Apps Script request failed —", e.message);
+    STORES = [...DEFAULT_STORES];
     ITEMS = DEMO_ITEMS.map(normalizeItem); BANNERS = DEMO_BANNERS; COUPONS = DEMO_COUPONS;
     CATEGORIES = DEMO_CATEGORIES; SETTINGS = {...DEFAULT_SETTINGS};
     showToast("Couldn't reach your Apps Script backend — using demo data (see console)");
     return;
+  }
+
+  // ---- Stores (loaded before Items, since items fall back to the first store) ----
+  try{
+    const stRows = Array.isArray(data.stores) ? data.stores : [];
+    if(!stRows.length) throw new Error("0 stores returned — check the Stores tab");
+    STORES = stRows.map(r=>({
+      id: String(r.id||"").trim() || ("store"+Math.random().toString(36).slice(2,7)),
+      name: r.name || "Restaurant",
+      image: (r.image||"").trim(),
+      cuisine: r.cuisine || "",
+      emoji: r.emoji || "🍴",
+      deliveryTime: r.deliveryTime || "20-30 min",
+      isOpen: r.isOpen===undefined || r.isOpen==="" ? true : /^(true|yes|1)$/i.test(r.isOpen),
+      lat: parseFloat(r.lat)||0, lng: parseFloat(r.lng)||0,
+      baseKm: parseFloat(r.baseKm)||2, baseFee: parseFloat(r.baseFee)||20,
+      extraRatePer100m: parseFloat(r.extraRatePer100m)||1,
+      maxDeliveryKm: parseFloat(r.maxDeliveryKm)||12
+    }));
+  }catch(e){
+    console.error("Foodzy: Stores failed to load —", e.message);
+    STORES = [...DEFAULT_STORES];
+    showToast("Couldn't load Stores from your backend — using demo store locations");
   }
 
   // ---- Items ----
@@ -1325,11 +1504,11 @@ async function loadBackend(){
     COUPONS = DEMO_COUPONS;
   }
 
-  // ---- Settings ----
+  // ---- Settings (global keys only — store-specific pricing lives in Stores now) ----
   try{
     const sRows = Array.isArray(data.settings) ? data.settings : [];
     if(sRows.length){
-      const numericKeys = ["storeLat","storeLng","baseKm","baseFee","extraRatePer100m","freeDeliveryAbove","maxDeliveryKm"];
+      const numericKeys = ["freeDeliveryAbove"];
       const merged = {...DEFAULT_SETTINGS};
       sRows.forEach(r=>{
         const key = String(r.key||"").trim();
@@ -1377,9 +1556,11 @@ const appShell = document.getElementById('appShell');
 document.getElementById('loginBtn').addEventListener('click', ()=>{
   const name = document.getElementById('loginName').value.trim();
   const phone = document.getElementById('loginPhone').value.trim();
+  const area = document.getElementById('loginArea').value;
   if(!name){ showToast("Please enter your name"); return; }
   if(!/^\d{10}$/.test(phone)){ showToast("Enter a valid 10-digit phone number"); return; }
-  state.user = {name, phone};
+  if(!area){ showToast("Please choose your area"); return; }
+  state.user = {name, phone, area};
   saveJSON("foodzy_user", state.user);
   if(!state.address.name) state.address.name = name;
   if(!state.address.phone) state.address.phone = phone;
@@ -1402,13 +1583,13 @@ function enterApp(){
 async function init(){
   await loadBackend();
   if(state.address.lat!=null && state.address.distanceKm==null){
-    state.address.distanceKm = haversineKm(SETTINGS.storeLat, SETTINGS.storeLng, state.address.lat, state.address.lng);
+    const nearest = nearestStore(state.address.lat, state.address.lng);
+    if(nearest) state.address.distanceKm = nearest.distanceKm;
     saveJSON("foodzy_address", state.address);
   }
   updateLocationDisplay();
   renderBanners();
-  renderCategories();
-  renderItems();
+  renderRestaurantList();
   renderBag();
   renderOrders();
   updateBagBadge();
@@ -1458,38 +1639,139 @@ function updateBannerPosition(){
   });
 })();
 
-/* ============ CATEGORIES ============ */
+/* ============ RESTAURANT LIST (Home) ============ */
+function renderRestaurantList(){
+  const wrap = document.getElementById('restaurantList');
+  const query = (document.getElementById('searchInput').value||"").toLowerCase().trim();
+  let list = STORES;
+  if(query) list = list.filter(s=>s.name.toLowerCase().includes(query) || (s.cuisine||'').toLowerCase().includes(query));
+  // open restaurants first, closed ones sink to the bottom (stable within each group)
+  list = list.map((s,i)=>({s,i})).sort((a,b)=>{
+    const aClosed = a.s.isOpen===false, bClosed = b.s.isOpen===false;
+    if(aClosed===bClosed) return a.i-b.i;
+    return aClosed ? 1 : -1;
+  }).map(x=>x.s);
+
+  if(!list.length){
+    wrap.innerHTML = `<div class="empty-state">
+      <div class="empty-emoji">🔍</div>
+      <div class="empty-title">No restaurants found</div>
+      <div class="empty-sub">Try a different search</div>
+    </div>`;
+    return;
+  }
+
+  wrap.innerHTML = list.map(store=>{
+    const itemCount = ITEMS.filter(i=>i.storeId===store.id).length;
+    const closed = store.isOpen===false;
+    const imgHtml = store.image
+      ? `<img src="${escapeAttr(store.image)}" alt="${escapeAttr(store.name)}" loading="lazy" onerror="foodzyImgFallback(this,'${(store.emoji||'🍴').replace(/'/g,"")}')">`
+      : escapeHtml(store.emoji||'🍴');
+    const imageBoxClass = store.image ? 'restaurant-card-image img' : 'restaurant-card-image';
+    return `
+    <div class="restaurant-card ${closed?'restaurant-closed':''}" data-id="${escapeAttr(store.id)}">
+      <div class="restaurant-card-image-wrap">
+        <div class="${imageBoxClass}">${imgHtml}</div>
+        ${closed
+          ? `<span class="restaurant-time-badge closed-badge">Currently Not accepting orders</span>`
+          : `<span class="restaurant-time-badge">⏱ ${escapeHtml(store.deliveryTime||'20-30 min')}</span>`}
+      </div>
+      <div class="restaurant-card-body">
+        <div class="restaurant-card-name">${escapeHtml(store.name)}</div>
+        <div class="restaurant-card-cuisine">${escapeHtml(store.cuisine||'Multi-cuisine')}</div>
+        <div class="restaurant-card-footer">
+          <span class="restaurant-card-items">🍽️ ${itemCount} items on menu</span>
+          <span class="restaurant-card-chevron">${closed ? 'Closed' : 'View menu ›'}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  wrap.querySelectorAll('.restaurant-card').forEach(card=>{
+    card.addEventListener('click', ()=>{
+      const id = card.getAttribute('data-id');
+      const store = getStore(id);
+      if(store && store.isOpen===false){
+        showToast(`${store.name} isn't accepting orders right now`);
+        return;
+      }
+      openRestaurantMenu(id);
+    });
+  });
+}
+document.getElementById('searchInput').addEventListener('input', renderRestaurantList);
+
+/* ============ RESTAURANT MENU (opened by tapping a restaurant card) ============ */
+function openRestaurantMenu(restaurantId){
+  state.currentRestaurantId = restaurantId;
+  state.menuActiveCategory = "All";
+  const store = getStore(restaurantId);
+
+  document.getElementById('menuRestaurantName').textContent = store ? store.name : 'Menu';
+  document.getElementById('menuRestaurantMeta').textContent = store
+    ? `${store.cuisine || 'Multi-cuisine'} · ⏱ ${store.deliveryTime || '20-30 min'}`
+    : '';
+  const thumbEl = document.getElementById('menuHeaderThumb');
+  if(store && store.image){
+    thumbEl.classList.add('img');
+    thumbEl.innerHTML = `<img src="${escapeAttr(store.image)}" alt="${escapeAttr(store.name)}" onerror="foodzyImgFallback(this,'${(store.emoji||'🍴').replace(/'/g,"")}')">`;
+  } else {
+    thumbEl.classList.remove('img');
+    thumbEl.textContent = (store && store.emoji) || '🍴';
+  }
+  document.getElementById('menuSearchInput').value = '';
+
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-restaurant-menu').classList.add('active');
+  appShell.scrollTo(0,0);
+
+  renderCategories();
+  renderItems();
+}
+
+document.getElementById('menuBackBtn').addEventListener('click', ()=>{
+  state.currentRestaurantId = null;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-home').classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.getAttribute('data-view')==='home'));
+  appShell.scrollTo(0,0);
+});
+
+/* ============ CATEGORIES (scoped to the open restaurant's menu) ============ */
 function renderCategories(){
-  const wrap = document.getElementById('catScroll');
-  const all = [{name:"All", emoji:"🛒"}, ...CATEGORIES];
+  const wrap = document.getElementById('menuCatScroll');
+  const restaurantItems = ITEMS.filter(i=>i.storeId===state.currentRestaurantId);
+  const catSet = [...new Set(restaurantItems.map(i=>i.category))];
+  const categories = catSet.map(c=>({name:c, emoji: (restaurantItems.find(i=>i.category===c)||{}).emoji || "🍽️"}));
+  const all = [{name:"All", emoji:"🍽️"}, ...categories];
   wrap.innerHTML = all.map(c=>`
-    <button class="cat-chip ${state.activeCategory===c.name?'active':''}" data-cat="${escapeAttr(c.name)}">
+    <button class="cat-chip ${state.menuActiveCategory===c.name?'active':''}" data-cat="${escapeAttr(c.name)}">
       <span class="cat-emoji">${c.emoji}</span>
       <span class="cat-label">${escapeHtml(c.name)}</span>
     </button>
   `).join('');
   wrap.querySelectorAll('.cat-chip').forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      state.activeCategory = btn.getAttribute('data-cat');
-      document.getElementById('itemsSectionTitle').textContent = state.activeCategory==="All" ? "Popular right now" : state.activeCategory;
+      state.menuActiveCategory = btn.getAttribute('data-cat');
+      document.getElementById('menuSectionTitle').textContent = state.menuActiveCategory==="All" ? "Full menu" : state.menuActiveCategory;
       renderCategories();
       renderItems();
     });
   });
 }
 
-/* ============ ITEMS ============ */
+/* ============ ITEMS (scoped to the open restaurant's menu) ============ */
 function renderItems(){
-  const grid = document.getElementById('itemsGrid');
-  const query = (document.getElementById('searchInput').value||"").toLowerCase().trim();
-  let list = ITEMS;
-  if(state.activeCategory !== "All") list = list.filter(i=>i.category===state.activeCategory);
+  const grid = document.getElementById('menuItemsGrid');
+  const query = (document.getElementById('menuSearchInput').value||"").toLowerCase().trim();
+  let list = ITEMS.filter(i=>i.storeId===state.currentRestaurantId);
+  if(state.menuActiveCategory !== "All") list = list.filter(i=>i.category===state.menuActiveCategory);
   if(query) list = list.filter(i=>i.name.toLowerCase().includes(query));
 
   if(!list.length){
     grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
       <div class="empty-emoji">🔍</div>
-      <div class="empty-title">No items found</div>
+      <div class="empty-title">No dishes found</div>
       <div class="empty-sub">Try a different search or category</div>
     </div>`;
     return;
@@ -1516,7 +1798,7 @@ function renderItems(){
         </div>
         <div class="qty-zone">
           ${allVariantsUnavailable ? `
-            <button class="add-btn unavailable-btn" disabled>Unavailable</button>
+            <button class="add-btn unavailable-btn" disabled>Not available</button>
           ` : hasVariants ? `
             <button class="add-btn variant-open-btn">${qty>0 ? qty+' in bag' : 'ADD'}</button>
           ` : (qty>0 ? `
@@ -1549,13 +1831,13 @@ function changeQty(cartKey, delta){
   if(next===0) delete state.cart[cartKey];
   else state.cart[cartKey] = next;
   saveJSON("foodzy_cart", state.cart);
-  renderItems();
+  if(state.currentRestaurantId) renderItems();
   renderBag();
   updateBagBadge();
   if(delta>0) showToast("Added to bag");
 }
 
-document.getElementById('searchInput').addEventListener('input', renderItems);
+document.getElementById('menuSearchInput').addEventListener('input', renderItems);
 
 /* ============ VARIANT PICKER MODAL ============ */
 const variantModal = document.getElementById('variantModal');
@@ -1583,7 +1865,7 @@ function renderVariantModalBody(){
         <span class="variant-label">${escapeHtml(v.label)}</span>
         <span class="variant-price">₹${v.price}${v.mrp>v.price ? `<span class="mrp">₹${v.mrp}</span>` : ``}</span>
       </div>
-      ${unavailable ? `<button class="add-btn unavailable-btn" disabled>Unavailable</button>` : (qty>0 ? `
+      ${unavailable ? `<button class="add-btn unavailable-btn" disabled>Not available</button>` : (qty>0 ? `
         <div class="qty-stepper">
           <button class="qty-minus">−</button>
           <span class="qty-num">${qty}</span>
@@ -1617,30 +1899,47 @@ function updateBagBadge(){
 
 /* ============ BILL CALC ============ */
 function computeBill(){
-  let subtotal = 0;
+  const addr = state.address;
+  const groups = {}; // storeId -> {store, subtotal}
   Object.entries(state.cart).forEach(([key,qty])=>{
     const line = getCartLineInfo(key);
-    if(line) subtotal += line.price * qty;
+    if(!line) return;
+    const sid = line.storeId || (STORES[0] && STORES[0].id) || 'unknown';
+    if(!groups[sid]) groups[sid] = {storeId:sid, store:getStore(sid), subtotal:0};
+    groups[sid].subtotal += line.price * qty;
   });
 
-  const distanceKm = state.address.distanceKm;
-  let deliveryFee = 0;
-  let outOfRange = false;
-  if(subtotal>0){
-    deliveryFee = (distanceKm!=null) ? calcDeliveryFee(distanceKm) : SETTINGS.baseFee;
-    if(SETTINGS.maxDeliveryKm && distanceKm!=null && distanceKm > SETTINGS.maxDeliveryKm) outOfRange = true;
-    if(SETTINGS.freeDeliveryAbove && subtotal >= SETTINGS.freeDeliveryAbove) deliveryFee = 0;
-  }
+  let subtotal = 0, deliveryFee = 0, outOfRange = false;
+  const storeBreakdown = Object.values(groups).map(g=>{
+    subtotal += g.subtotal;
+    let fee = 0, distanceKm = null, groupOutOfRange = false;
+    if(g.subtotal > 0){
+      if(addr.lat!=null && g.store){
+        distanceKm = haversineKm(g.store.lat, g.store.lng, addr.lat, addr.lng);
+        fee = calcDeliveryFee(distanceKm, g.store);
+        if(g.store.maxDeliveryKm && distanceKm > g.store.maxDeliveryKm) groupOutOfRange = true;
+      } else {
+        fee = g.store ? g.store.baseFee : 20;
+      }
+      if(SETTINGS.freeDeliveryAbove && g.subtotal >= SETTINGS.freeDeliveryAbove) fee = 0;
+    }
+    if(groupOutOfRange) outOfRange = true;
+    deliveryFee += fee;
+    return {storeId:g.storeId, storeName: g.store?g.store.name:'Store', subtotal:g.subtotal, distanceKm, fee, outOfRange:groupOutOfRange};
+  });
 
   let discount = 0;
   const coupon = state.appliedCoupon;
   if(coupon && subtotal >= coupon.minOrder){
     if(coupon.type==='flat') discount = Math.min(coupon.value, subtotal);
     else if(coupon.type==='percent') discount = Math.min(subtotal*(coupon.value/100), coupon.maxDiscount||9999);
-    else if(coupon.type==='freeship') deliveryFee = 0;
+    else if(coupon.type==='freeship'){
+      deliveryFee = 0;
+      storeBreakdown.forEach(b=>b.fee=0);
+    }
   }
   const total = Math.max(0, subtotal - discount + deliveryFee);
-  return {subtotal, discount, deliveryFee, total, coupon, distanceKm, outOfRange};
+  return {subtotal, discount, deliveryFee, total, coupon, outOfRange, storeBreakdown};
 }
 
 /* ============ BAG VIEW ============ */
@@ -1715,11 +2014,13 @@ function renderBag(){
   html += `<div class="card-block">
     <h3>📍 Delivery address</h3>
     <button class="map-pick-btn" id="pickOnMapBtn">🗺️ ${addr.lat ? 'Change location on map' : 'Set location on map'}</button>
-    ${addr.lat && bill.distanceKm!=null ? `
-      <div class="distance-note ${bill.outOfRange?'warn':''}">
-        📏 ${bill.distanceKm.toFixed(1)} km from ${escapeHtml(SETTINGS.storeName)} ·
-        ${bill.outOfRange ? `outside our ${SETTINGS.maxDeliveryKm} km delivery range` : `delivery fee ₹${calcDeliveryFee(bill.distanceKm).toFixed(0)}`}
-      </div>
+    ${addr.lat && bill.storeBreakdown.length ? `
+      ${bill.storeBreakdown.map(b=>`
+        <div class="distance-note ${b.outOfRange?'warn':''}">
+          🏬 ${escapeHtml(b.storeName)}${b.distanceKm!=null ? ` · 📏 ${b.distanceKm.toFixed(1)} km` : ``} ·
+          ${b.outOfRange ? `outside delivery range` : `delivery fee ${b.fee===0?'FREE':'₹'+b.fee.toFixed(0)}`}
+        </div>
+      `).join('')}
     ` : ``}
     <div class="field-row">
       <label>Full name</label>
@@ -1743,8 +2044,11 @@ function renderBag(){
     </div>
   </div>`;
 
+  // spacer so the fixed place-order bar never covers the instructions card
+  html += `<div style="height:96px;"></div>`;
+
   html += `<div class="place-order-bar">
-    ${bill.outOfRange ? `<div class="distance-note warn" style="margin-bottom:8px;">We can't deliver this far yet — please pick a closer location.</div>` : ``}
+    ${bill.outOfRange ? `<div class="distance-note warn" style="margin-bottom:8px;">One of the stores in your bag can't deliver this far yet — please pick a closer location, or remove items from that store.</div>` : ``}
     <button class="btn-primary" id="placeOrderBtn" ${bill.outOfRange?'disabled':''}>Place order · ₹${bill.total.toFixed(0)}</button>
   </div>`;
 
@@ -1798,8 +2102,18 @@ function placeOrder(){
   if(!/^\d{10}$/.test(addr.phone||'')){ showToast("Please enter a valid 10-digit phone number"); return; }
   if(!addr.address || addr.address.trim().length<8){ showToast("Please enter your full delivery address"); return; }
 
+  const closedStoreIds = new Set(STORES.filter(s=>s.isOpen===false).map(s=>s.id));
+  const hasClosedItem = entries.some(([key])=>{
+    const line = getCartLineInfo(key);
+    return line && closedStoreIds.has(line.storeId);
+  });
+  if(hasClosedItem){
+    showToast("A restaurant in your bag isn't accepting orders right now — please remove its items");
+    return;
+  }
+
   const bill = computeBill();
-  if(bill.outOfRange){ showToast(`Sorry, that's outside our ${SETTINGS.maxDeliveryKm} km delivery range`); return; }
+  if(bill.outOfRange){ showToast(`Sorry, one of your stores can't deliver this far yet`); return; }
   const orderItems = entries.map(([key,qty])=>{
     const line = getCartLineInfo(key);
     if(!line) return null;
@@ -1808,7 +2122,8 @@ function placeOrder(){
       variant: line.variant,
       unit: line.unit,
       qty, price: line.price,
-      lineTotal: line.price*qty
+      lineTotal: line.price*qty,
+      storeId: line.storeId
     };
   }).filter(Boolean);
 
@@ -1823,8 +2138,7 @@ function placeOrder(){
     deliveryFee: bill.deliveryFee,
     total: bill.total,
     coupon: bill.coupon ? bill.coupon.code : null,
-    distanceKm: bill.distanceKm,
-    storeName: SETTINGS.storeName,
+    storeBreakdown: bill.storeBreakdown,
     instructions,
     address: {...addr}
   };
@@ -1832,7 +2146,7 @@ function placeOrder(){
   state.orders.unshift(order);
   saveJSON("foodzy_orders", state.orders);
 
-  // build WhatsApp message
+  // build WhatsApp message, grouped by store
   let msg = `🛒 *New Order — Foodzy*\n`;
   msg += `Order ID: ${orderId}\n`;
   msg += `Date: ${new Date(order.date).toLocaleString()}\n\n`;
@@ -1840,17 +2154,21 @@ function placeOrder(){
   if(addr.lat && addr.lng){
     msg += `🗺️ Map: https://maps.mappls.com/@${addr.lat},${addr.lng},17z\n`;
   }
-  if(bill.distanceKm!=null){
-    msg += `📏 Distance from ${SETTINGS.storeName}: ${bill.distanceKm.toFixed(1)} km\n`;
-  }
-  msg += `\n*Items:*\n`;
-  orderItems.forEach((it,idx)=>{
-    const variantTxt = it.variant ? ` — ${it.variant}` : (it.unit ? ` (${it.unit})` : '');
-    msg += `${idx+1}. ${it.name}${variantTxt} x${it.qty} — ₹${it.lineTotal}\n`;
+
+  bill.storeBreakdown.forEach(b=>{
+    msg += `\n🏬 *${b.storeName}*`;
+    if(b.distanceKm!=null) msg += ` — ${b.distanceKm.toFixed(1)} km`;
+    msg += `\n`;
+    orderItems.filter(it=>it.storeId===b.storeId).forEach((it,idx)=>{
+      const variantTxt = it.variant ? ` — ${it.variant}` : (it.unit ? ` (${it.unit})` : '');
+      msg += `${idx+1}. ${it.name}${variantTxt} x${it.qty} — ₹${it.lineTotal}\n`;
+    });
+    msg += `Delivery fee (${b.storeName}): ${b.fee===0?'FREE':'₹'+b.fee.toFixed(0)}\n`;
   });
+
   msg += `\nItem total: ₹${bill.subtotal}\n`;
   if(bill.discount>0) msg += `Coupon (${order.coupon}): −₹${bill.discount.toFixed(0)}\n`;
-  msg += `Delivery fee: ${bill.deliveryFee===0?'FREE':'₹'+bill.deliveryFee}\n`;
+  msg += `Total delivery fee: ${bill.deliveryFee===0?'FREE':'₹'+bill.deliveryFee.toFixed(0)}\n`;
   msg += `*Total to pay: ₹${bill.total.toFixed(0)}*\n`;
   if(instructions){
     msg += `\n📝 *Instructions:* ${instructions}\n`;
@@ -1903,6 +2221,12 @@ function renderOrders(){
           </div>
         `).join('')}
         ${order.coupon ? `<div class="ticket-item-row" style="color:var(--green-dark);"><span>Coupon ${escapeHtml(order.coupon)}</span><span class="mono">−₹${order.discount.toFixed(0)}</span></div>` : ``}
+        ${(order.storeBreakdown||[]).length>1 ? order.storeBreakdown.map(b=>`
+          <div class="ticket-item-row" style="color:var(--muted);font-size:11.5px;">
+            <span>🏬 ${escapeHtml(b.storeName)}${b.distanceKm!=null?' · '+b.distanceKm.toFixed(1)+' km':''}</span>
+            <span class="mono">${b.fee===0?'FREE':'₹'+b.fee.toFixed(0)}</span>
+          </div>
+        `).join('') : ``}
         ${order.instructions ? `<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:12.5px;color:var(--muted);">📝 ${escapeHtml(order.instructions)}</div>` : ``}
       </div>
       <div class="ticket-foot">
@@ -1921,12 +2245,23 @@ function resendOrder(orderId){
   const order = state.orders.find(o=>o.id===orderId);
   if(!order) return;
   let msg = `🛒 *Order Follow-up — Foodzy*\nOrder ID: ${order.id}\n\n`;
-  msg += `👤 Name: ${order.address.name}\n📞 Phone: ${order.address.phone}\n📍 Address: ${order.address.address}\n\n`;
-  msg += `*Items:*\n`;
-  order.items.forEach((it,idx)=>{
-    const variantTxt = it.variant ? ` — ${it.variant}` : (it.unit ? ` (${it.unit})` : '');
-    msg += `${idx+1}. ${it.name}${variantTxt} x${it.qty} — ₹${it.lineTotal}\n`;
-  });
+  msg += `👤 Name: ${order.address.name}\n📞 Phone: ${order.address.phone}\n📍 Address: ${order.address.address}\n`;
+  const breakdown = order.storeBreakdown || [];
+  if(breakdown.length){
+    breakdown.forEach(b=>{
+      msg += `\n🏬 *${b.storeName}*\n`;
+      order.items.filter(it=>it.storeId===b.storeId).forEach((it,idx)=>{
+        const variantTxt = it.variant ? ` — ${it.variant}` : (it.unit ? ` (${it.unit})` : '');
+        msg += `${idx+1}. ${it.name}${variantTxt} x${it.qty} — ₹${it.lineTotal}\n`;
+      });
+    });
+  } else {
+    msg += `\n*Items:*\n`;
+    order.items.forEach((it,idx)=>{
+      const variantTxt = it.variant ? ` — ${it.variant}` : (it.unit ? ` (${it.unit})` : '');
+      msg += `${idx+1}. ${it.name}${variantTxt} x${it.qty} — ₹${it.lineTotal}\n`;
+    });
+  }
   msg += `\n*Total: ₹${order.total.toFixed(0)}*\n`;
   if(order.instructions){ msg += `\n📝 Instructions: ${order.instructions}\n`; }
   msg += `\nFollowing up on this order — please confirm status. Thank you!`;
@@ -1958,6 +2293,7 @@ document.getElementById('acctLogoutBtn').addEventListener('click', ()=>{
 /* ============ VIEW SWITCHING ============ */
 function switchView(view){
   state.currentView = view;
+  if(view==='home') state.currentRestaurantId = null;
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+view).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.getAttribute('data-view')===view));
@@ -1971,7 +2307,7 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
 
 /* ============ MAP MODAL (Mappls) ============ */
 const MAPPLS_API_KEY = "lopseegnprquwuleogzkmaaspuyucipiiprr";
-let gmap, customerMarker, storeMarker, mapInitialized=false;
+let gmap, customerMarker, storeMarkers=[], mapInitialized=false;
 let mapplsLoadPromise = null;
 const mapModal = document.getElementById('mapModal');
 
@@ -2026,21 +2362,26 @@ async function openMapModal(){
   setTimeout(()=>{
     if(!mapInitialized){
       try{
-        const startLat = state.address.lat || SETTINGS.storeLat;
-        const startLng = state.address.lng || SETTINGS.storeLng;
+        const fallback = STORES[0] || {lat:28.6139, lng:77.2090};
+        const startLat = state.address.lat || fallback.lat;
+        const startLng = state.address.lng || fallback.lng;
         gmap = new mappls.Map('mapContainer', {
           center: {lat:startLat, lng:startLng},
-          zoom: state.address.lat ? 16 : 14,
+          zoom: state.address.lat ? 16 : 12,
           zoomControl: true
         });
-        storeMarker = new mappls.Marker({
-          map: gmap,
-          position: {lat:SETTINGS.storeLat, lng:SETTINGS.storeLng},
-          draggable: false,
-          fitbounds: false,
-          icon: STORE_ICON_URL,
-          width: 26,
-          height: 26
+        storeMarkers = STORES.map(store=>{
+          const m = new mappls.Marker({
+            map: gmap,
+            position: {lat:store.lat, lng:store.lng},
+            draggable: false,
+            fitbounds: false,
+            icon: STORE_ICON_URL,
+            width: 26,
+            height: 26
+          });
+          if(m.setTitle) m.setTitle(store.name);
+          return m;
         });
         customerMarker = new mappls.Marker({
           map: gmap,
@@ -2108,14 +2449,17 @@ document.getElementById('gpsBtn').addEventListener('click', detectGPS);
 
 function updateModalDistance(lat, lng){
   const note = document.getElementById('modalDistanceNote');
-  const distanceKm = haversineKm(SETTINGS.storeLat, SETTINGS.storeLng, lat, lng);
-  const fee = calcDeliveryFee(distanceKm);
-  const outOfRange = SETTINGS.maxDeliveryKm && distanceKm > SETTINGS.maxDeliveryKm;
+  const nearest = nearestStore(lat, lng);
+  if(!nearest){ note.style.display = 'none'; return null; }
+  const {store, distanceKm} = nearest;
+  const fee = calcDeliveryFee(distanceKm, store);
+  const outOfRange = store.maxDeliveryKm && distanceKm > store.maxDeliveryKm;
   note.style.display = 'block';
   note.classList.toggle('warn', !!outOfRange);
+  const multiStoreNote = STORES.length>1 ? ' (closest store)' : '';
   note.textContent = outOfRange
-    ? `📏 ${distanceKm.toFixed(1)} km from ${SETTINGS.storeName} — outside our ${SETTINGS.maxDeliveryKm} km delivery range`
-    : `📏 ${distanceKm.toFixed(1)} km from ${SETTINGS.storeName} · delivery fee ₹${fee.toFixed(0)}`;
+    ? `📏 ${distanceKm.toFixed(1)} km from ${store.name}${multiStoreNote} — outside delivery range`
+    : `📏 ${distanceKm.toFixed(1)} km from ${store.name}${multiStoreNote} · delivery fee ₹${fee.toFixed(0)}`;
   return distanceKm;
 }
 
@@ -2159,7 +2503,7 @@ document.getElementById('confirmLocationBtn').addEventListener('click', ()=>{
   if(state.mapPickLat==null){ showToast("Tap the map to choose your location"); return; }
   state.address.lat = state.mapPickLat;
   state.address.lng = state.mapPickLng;
-  state.address.distanceKm = haversineKm(SETTINGS.storeLat, SETTINGS.storeLng, state.mapPickLat, state.mapPickLng);
+  state.address.distanceKm = (nearestStore(state.mapPickLat, state.mapPickLng)||{}).distanceKm ?? null;
   const detected = document.getElementById('detectedAddress').getAttribute('data-address');
   if(detected && (!state.address.address || state.address.address.trim()==='')){
     state.address.address = detected;
@@ -2180,7 +2524,7 @@ function autoDetectLocationOnce(){
     const {latitude, longitude} = pos.coords;
     state.address.lat = latitude;
     state.address.lng = longitude;
-    state.address.distanceKm = haversineKm(SETTINGS.storeLat, SETTINGS.storeLng, latitude, longitude);
+    state.address.distanceKm = (nearestStore(latitude, longitude)||{}).distanceKm ?? null;
     saveJSON("foodzy_address", state.address);
     reverseGeocode(latitude, longitude)
       .then(display=>{
@@ -2224,13 +2568,19 @@ function escapeHtml(str){
 function escapeAttr(str){ return escapeHtml(str); }
 
 /* ============ BOOTSTRAP ============
-   Returning users (name + phone already saved on this device/browser) skip
-   the login screen entirely and land straight on the home page. */
-if(state.user && state.user.name && state.user.phone){
+   Returning users (name + phone + area already saved on this device/browser)
+   skip the login screen entirely and land straight on the home page. */
+if(state.user && state.user.name && state.user.phone && state.user.area){
   document.getElementById('loginName').value = state.user.name;
   document.getElementById('loginPhone').value = state.user.phone;
+  document.getElementById('loginArea').value = state.user.area;
   enterApp();
 } else {
+  if(state.user){
+    if(state.user.name) document.getElementById('loginName').value = state.user.name;
+    if(state.user.phone) document.getElementById('loginPhone').value = state.user.phone;
+    if(state.user.area) document.getElementById('loginArea').value = state.user.area;
+  }
   loginScreen.classList.add('show');
 }
 
