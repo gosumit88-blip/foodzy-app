@@ -33,37 +33,54 @@ jobs:
 
     - name: Create Project & Build APK/AAB
       run: |
-        cordova create foodzy_project com.foodzy.app "Foodzy"
+        cordova create foodzy_project com.foodzy.customerapp "Foodzy"
         cd foodzy_project
-        
+
         rm -rf www/*
         rm -f config.xml
-        
+
         cp ../index.html www/
         cp ../config.xml .
-        
+
         cordova platform add android@13.0.0 --no-telemetry
-        
+
         export GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx2048m -Dorg.gradle.daemon=false"
-        
+
         # 1. Debug APK Build
         cordova build android --debug --no-telemetry -- --gradleArg=-Dorg.gradle.daemon=false
-        
+
         # 2. Release AAB Build
         cordova build android --release --no-telemetry -- --packageType=bundle --gradleArg=-Dorg.gradle.daemon=false
 
-    - name: Generate Keystore & Export PEM Certificate
+    - name: Decode persisted upload keystore
+      # This is the fix: instead of generating a brand-new random keystore
+      # every run (which produced a different signing key each time and
+      # broke Play Console uploads), we decode the SAME keystore every
+      # single build from a GitHub Secret. That secret holds the exact
+      # keystore Foodzy generated for you and whose certificate you already
+      # submitted to Google for the "upload key reset".
       run: |
         cd foodzy_project/platforms/android/app/build/outputs/bundle/release/
-        
-        # Fixed params ke sath Keystore generate karein
-        keytool -genkey -v -keystore foodzy_upload.keystore -alias foodzy_upload -keyalg RSA -keysize 2048 -validity 10000 -storepass foodzyKey123 -keypass foodzyKey123 -dname "CN=Foodzy, OU=App, O=Foodzy, L=Kailashahar, ST=Tripura, C=IN"
-        
-        # Google Play Reset request ke liye PEM Certificate Export karein
-        keytool -export -rfc -keystore foodzy_upload.keystore -alias foodzy_upload -file upload_certificate.pem -storepass foodzyKey123
-        
-        # AAB ko Sign karein
-        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore foodzy_upload.keystore -storepass foodzyKey123 -keypass foodzyKey123 app-release.aab foodzy_upload
+        echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > foodzy_upload.keystore
+
+    - name: Sign AAB with persisted keystore
+      run: |
+        cd foodzy_project/platforms/android/app/build/outputs/bundle/release/
+
+        # Export the PEM certificate every run too — harmless, and handy if
+        # you ever need to re-submit it to Google for any reason.
+        keytool -export -rfc \
+          -keystore foodzy_upload.keystore \
+          -alias "${{ secrets.ANDROID_KEY_ALIAS }}" \
+          -file upload_certificate.pem \
+          -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}"
+
+        # Sign the AAB with the SAME persisted key every time
+        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+          -keystore foodzy_upload.keystore \
+          -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+          -keypass "${{ secrets.ANDROID_KEY_PASSWORD }}" \
+          app-release.aab "${{ secrets.ANDROID_KEY_ALIAS }}"
 
     - name: Upload Signed AAB & PEM Certificate to GitHub
       uses: actions/upload-artifact@v4
