@@ -20,7 +20,8 @@
   anywhere except into the WhatsApp order message the customer sends.
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 /* ============ TOKENS ============ */
 :root{
@@ -226,6 +227,15 @@ a{color:inherit;}
   font-weight:700;
   margin:14px 0 12px;
 }
+.greet-row{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.greet-row .greet{margin:14px 0 12px;}
+.switch-service-btn{
+  font-size:11.5px;font-weight:700;color:var(--green-dark);
+  background:var(--green-soft);padding:7px 12px;border-radius:20px;
+  white-space:nowrap;flex-shrink:0;
+}
 .search-bar{
   display:flex;
   align-items:center;
@@ -350,6 +360,35 @@ a{color:inherit;}
 
 /* ============ ITEMS GRID ============ */
 /* ============ RESTAURANT LIST (Home) — Swiggy-style cards ============ */
+/* ============ CHOOSE SERVICE (3 cards after login) ============ */
+.service-cards{padding:10px 18px 24px;}
+.service-card{
+  position:relative;
+  height:130px;
+  border-radius:18px;
+  overflow:hidden;
+  margin-bottom:16px;
+  box-shadow:0 3px 12px rgba(27,46,40,0.08);
+  display:flex;align-items:flex-end;
+}
+.service-card:active{transform:scale(0.99);}
+.service-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;}
+.service-card-fallback{
+  position:absolute;inset:0;
+  background:var(--green-soft);
+  display:flex;align-items:center;justify-content:center;
+  font-size:50px;z-index:0;
+}
+.service-card-overlay{
+  position:relative;z-index:1;width:100%;
+  background:linear-gradient(to top, rgba(10,20,17,0.65), rgba(10,20,17,0));
+  padding:16px 18px;
+}
+.service-card-title{
+  color:#fff;font-family:'Baloo 2',sans-serif;
+  font-size:19px;font-weight:700;
+}
+
 .restaurant-list{padding:14px 18px 20px;}
 .restaurant-card{
   background:#fff;border:1px solid var(--line);border-radius:18px;
@@ -1008,7 +1047,42 @@ a{color:inherit;}
 <div id="appShell">
 
   <!-- ---- HOME ---- -->
-  <div class="view active" id="view-home">
+  <!-- ---- CHOOSE SERVICE ---- -->
+  <div class="view active" id="view-choose-service">
+    <div class="topbar" style="padding-bottom:6px;">
+      <div class="greet">Hi <span id="chooseGreetName">there</span> 👋</div>
+      <p style="color:var(--muted);font-size:13.5px;margin:4px 0 0;">What would you like to order today?</p>
+    </div>
+    <div class="service-cards" id="serviceCardsWrap"></div>
+  </div>
+
+  <!-- ---- PRE ORDER SERVICE ---- -->
+  <div class="view" id="view-preorder">
+    <div class="menu-header">
+      <button class="menu-back-btn" id="preOrderBackBtn">← Back</button>
+      <div class="menu-restaurant-name">📅 Pre Order Service</div>
+      <div class="menu-restaurant-meta">Tell us what you need — we'll confirm on WhatsApp</div>
+    </div>
+    <div class="card-block" style="margin-top:14px;">
+      <div class="field-row">
+        <label>What You Need</label>
+        <textarea id="preOrderNeed" rows="4" placeholder="Describe what you'd like to pre-order — items, quantity, any special requests..."></textarea>
+      </div>
+      <div class="field-row">
+        <label>Delivery Time</label>
+        <input type="datetime-local" id="preOrderTime">
+      </div>
+      <div class="field-row" style="margin-bottom:0;">
+        <label>Detailed Address</label>
+        <textarea id="preOrderAddress" rows="3" placeholder="House / flat no., street, landmark, city, pincode"></textarea>
+      </div>
+    </div>
+    <div style="padding:0 18px 24px;">
+      <button class="btn-primary" id="bookPreOrderBtn">Book Pre Order</button>
+    </div>
+  </div>
+
+  <div class="view" id="view-home">
     <div class="topbar" id="topbar">
       <div class="loc-row">
         <button class="loc-btn" id="openMapFromHome">
@@ -1020,7 +1094,10 @@ a{color:inherit;}
         </button>
         <span class="timer-chip on-amber">⏱ FOOD IN MINUTES</span>
       </div>
-      <div class="greet">Hi <span id="homeGreetName">there</span> 👋</div>
+      <div class="greet-row">
+        <div class="greet">Hi <span id="homeGreetName">there</span> 👋</div>
+        <button class="switch-service-btn" id="switchServiceBtn">🔄 Switch</button>
+      </div>
       <div class="search-bar">
         <span>🔍</span>
         <input type="text" id="searchInput" placeholder="Search restaurants or cuisines...">
@@ -1034,7 +1111,9 @@ a{color:inherit;}
       <div class="banner-dots" id="bannerDots"></div>
     </div>
 
-    <div class="section-head"><h2>Restaurants near you</h2></div>
+    <div class="cat-scroll hidden" id="homeCatScroll"></div>
+
+    <div class="section-head"><h2 id="homeSectionTitle">Restaurants near you</h2></div>
     <div class="restaurant-list" id="restaurantList"></div>
   </div>
 
@@ -1088,8 +1167,9 @@ a{color:inherit;}
     <div class="menu-list">
       <div class="menu-item" id="acctEditBtn"><span class="mi-icon">✏️</span> Edit name & phone</div>
       <div class="menu-item" id="acctAddressBtn"><span class="mi-icon">📍</span> Saved delivery address</div>
-      <div class="menu-item"><span class="mi-icon">💬</span> Chat with Foodzy support</div>
-      <div class="menu-item"><span class="mi-icon">ℹ️</span> About Foodzy</div>
+      <div class="menu-item" id="acctSupportBtn"><span class="mi-icon">💬</span> Chat with Foodzy support</div>
+      <div class="menu-item" id="acctPrivacyBtn"><span class="mi-icon">🔒</span> Privacy Policy</div>
+      <div class="menu-item" id="acctAboutBtn"><span class="mi-icon">ℹ️</span> About Foodzy</div>
       <div class="menu-item danger" id="acctLogoutBtn"><span class="mi-icon">🚪</span> Log out</div>
     </div>
   </div>
@@ -1215,16 +1295,36 @@ const WHATSAPP_NUMBER = "918258823457"; // Foodzy order inbox
 /* Global settings (not tied to any one store) — used until a Settings sheet
    is connected, and merged with any keys missing from the sheet. */
 const DEFAULT_SETTINGS = {
-  freeDeliveryAbove: 199
+  freeDeliveryAbove: 199,
+  foodCardImage: "",
+  cakeCardImage: "",
+  groceriesCardImage: "",
+  preorderCardImage: ""
 };
 let SETTINGS = {...DEFAULT_SETTINGS};
+
+/* The 3 fixed service cards shown right after login. Images come from
+   Settings (foodCardImage/cakeCardImage/groceriesCardImage) — set once in
+   the Admin panel's Settings tab. Falls back to an emoji if no image. */
+const SERVICES = [
+  {id:"food", title:"Order Food", emoji:"🍽️"},
+  {id:"cake", title:"Order Cake", emoji:"🎂"},
+  {id:"groceries", title:"Order Groceries", emoji:"🛒"},
+  {id:"preorder", title:"Pre Order Service", emoji:"📅"}
+];
+
+/* Fixed category chips shown above the restaurant list, only for the Food
+   service. Filters restaurants by their "categories" tag list. */
+const FOOD_CATEGORY_CHIPS = ["Momo","Biryani","Rice","Meal","Pizza","Burger","Rolls","Dosa"];
 
 /* Fallback stores — used until a Stores sheet is connected. Each store has
    its own location and its own delivery pricing, since different stores can
    sit at different distances from a customer. */
 const DEFAULT_STORES = [
-  {id:"store1", name:"Spice Route Kitchen", image:"", cuisine:"North Indian, Mughlai", emoji:"🍛", deliveryTime:"30-35 min", isOpen:true, lat:28.6139, lng:77.2090, baseKm:2, baseFee:20, extraRatePer100m:1, maxDeliveryKm:12},
-  {id:"store2", name:"Wok & Roll", image:"", cuisine:"Chinese, Thai", emoji:"🥡", deliveryTime:"25-30 min", isOpen:false, lat:28.5245, lng:77.2066, baseKm:2, baseFee:20, extraRatePer100m:1, maxDeliveryKm:12}
+  {id:"store1", name:"Spice Route Kitchen", image:"", cuisine:"North Indian, Mughlai", emoji:"🍛", deliveryTime:"30-35 min", isOpen:true, serviceType:"food", categories:["Biryani","Rice","Meal"], lat:28.6139, lng:77.2090, baseKm:2, baseFee:20, extraRatePer100m:1, maxDeliveryKm:12},
+  {id:"store2", name:"Wok & Roll", image:"", cuisine:"Chinese, Thai", emoji:"🥡", deliveryTime:"25-30 min", isOpen:false, serviceType:"food", categories:["Momo","Rice"], lat:28.5245, lng:77.2066, baseKm:2, baseFee:20, extraRatePer100m:1, maxDeliveryKm:12},
+  {id:"store3", name:"Sugar & Spice Bakery", image:"", cuisine:"Cakes, Pastries", emoji:"🎂", deliveryTime:"40-45 min", isOpen:true, serviceType:"cake", categories:[], lat:28.6100, lng:77.2050, baseKm:2, baseFee:25, extraRatePer100m:1, maxDeliveryKm:12},
+  {id:"store4", name:"Foodzy Daily Mart", image:"", cuisine:"Grocery & Essentials", emoji:"🛒", deliveryTime:"15-20 min", isOpen:true, serviceType:"groceries", categories:[], lat:28.6180, lng:77.2110, baseKm:2, baseFee:20, extraRatePer100m:1, maxDeliveryKm:12}
 ];
 let STORES = [...DEFAULT_STORES];
 function getStore(storeId){
@@ -1294,6 +1394,10 @@ const DEMO_ITEMS = [
   {id:"15",name:"Veg Fried Rice",category:"Noodles & Rice",price:200,mrp:220,unit:"Full",emoji:"🍚",image:"",desc:"Wok-tossed rice with fresh vegetables",time:"20",storeId:"store2",variants:"Half:120:130:TRUE|Full:200:220:TRUE"},
   {id:"16",name:"Chicken Hakka Noodles",category:"Noodles & Rice",price:240,mrp:260,unit:"Full",emoji:"🍜",image:"",desc:"Classic stir-fried noodles with chicken & veggies",time:"20",storeId:"store2",variants:""},
   {id:"17",name:"Thai Green Curry",category:"Main Course",price:300,mrp:320,unit:"Full",emoji:"🍛",image:"",desc:"Creamy coconut curry with Thai herbs & vegetables",time:"25",storeId:"store2",variants:""},
+  {id:"19",name:"Chocolate Truffle Cake",category:"Cakes",price:450,mrp:500,unit:"500 g",emoji:"🍰",image:"",desc:"Rich, moist chocolate cake with truffle frosting",time:"40",storeId:"store3",variants:"500 g:450:500:TRUE|1 kg:800:900:TRUE"},
+  {id:"20",name:"Red Velvet Cake",category:"Cakes",price:480,mrp:530,unit:"500 g",emoji:"🎂",image:"",desc:"Classic red velvet with cream cheese frosting",time:"40",storeId:"store3",variants:"500 g:480:530:TRUE|1 kg:850:950:TRUE"},
+  {id:"21",name:"Full Cream Milk",category:"Dairy",price:68,mrp:70,unit:"1 L",emoji:"🥛",image:"",desc:"Pasteurized full cream milk",time:"15",storeId:"store4",variants:""},
+  {id:"22",name:"Brown Bread",category:"Bakery",price:45,mrp:50,unit:"400 g",emoji:"🍞",image:"",desc:"Soft multigrain brown bread",time:"15",storeId:"store4",variants:""},
   {id:"18",name:"Chilli Paneer",category:"Main Course",price:240,mrp:260,unit:"Full",emoji:"🧆",image:"",desc:"Cottage cheese tossed in a spicy Indo-Chinese sauce",time:"25",storeId:"store2",variants:"Half:140:155:TRUE|Full:240:260:TRUE"},
 ];
 const DEMO_BANNERS = [
@@ -1400,6 +1504,8 @@ let state = {
   instructions: loadJSON("foodzy_instructions", ""),
   activeCategory: "All",
   currentRestaurantId: null,
+  selectedService: loadJSON("foodzy_service", null),
+  foodCategoryFilter: "All",
   menuActiveCategory: "All",
   currentView: "home",
   bannerIndex: 0,
@@ -1415,9 +1521,15 @@ function saveJSON(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
 
 /* ============ APPS SCRIPT BACKEND ============ */
 async function fetchAppsScript(){
-  const res = await fetch(APPS_SCRIPT_URL);
-  if(!res.ok) throw new Error("Apps Script request failed (HTTP " + res.status + ")");
-  return res.json();
+  const controller = new AbortController();
+  const timeout = setTimeout(()=>controller.abort(), 15000);
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, {signal: controller.signal});
+    if(!res.ok) throw new Error("Apps Script request failed (HTTP " + res.status + ")");
+    return await res.json();
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function loadBackend(){
@@ -1452,6 +1564,8 @@ async function loadBackend(){
       emoji: r.emoji || "🍴",
       deliveryTime: r.deliveryTime || "20-30 min",
       isOpen: r.isOpen===undefined || r.isOpen==="" ? true : /^(true|yes|1)$/i.test(r.isOpen),
+      serviceType: (r.serviceType||"food").trim().toLowerCase() || "food",
+      categories: (r.categories||"").split(/[,|]/).map(c=>c.trim()).filter(Boolean),
       lat: parseFloat(r.lat)||0, lng: parseFloat(r.lng)||0,
       baseKm: parseFloat(r.baseKm)||2, baseFee: parseFloat(r.baseFee)||20,
       extraRatePer100m: parseFloat(r.extraRatePer100m)||1,
@@ -1521,6 +1635,29 @@ async function loadBackend(){
     console.error("Foodzy: Settings failed to load —", e.message);
     SETTINGS = {...DEFAULT_SETTINGS};
   }
+
+  saveDataCache();
+}
+
+/* ============ LOCAL DATA CACHE (for instant repeat loads) ============
+   Apps Script responses can take a few seconds. We cache the last good
+   result so returning visitors see the app populated immediately, while
+   a fresh copy is fetched quietly in the background and swapped in. */
+const DATA_CACHE_KEY = "foodzy_data_cache_v1";
+function saveDataCache(){
+  try{
+    localStorage.setItem(DATA_CACHE_KEY, JSON.stringify({ITEMS, STORES, BANNERS, COUPONS, CATEGORIES, SETTINGS}));
+  }catch(e){ /* storage full or unavailable — safe to skip caching */ }
+}
+function loadDataCache(){
+  try{
+    const raw = localStorage.getItem(DATA_CACHE_KEY);
+    if(!raw) return false;
+    const c = JSON.parse(raw);
+    if(!c.ITEMS || !c.STORES) return false;
+    ITEMS=c.ITEMS; STORES=c.STORES; BANNERS=c.BANNERS; COUPONS=c.COUPONS; CATEGORIES=c.CATEGORIES; SETTINGS=c.SETTINGS;
+    return true;
+  }catch(e){ return false; }
 }
 
 /* ============ TOAST ============ */
@@ -1548,6 +1685,20 @@ function openExternal(url){
     window.open(url, '_blank');
   }
 }
+
+/* Cordova plugins — including the geolocation plugin that patches
+   navigator.geolocation — aren't reliably ready until 'deviceready' fires.
+   Calling getCurrentPosition() before that can silently fail or misbehave
+   (this is what was causing location detection to work "sometimes" and
+   fail other times). Every geolocation call in this file awaits this
+   first. In a plain browser (no Cordova), it resolves immediately. */
+const cordovaReady = new Promise((resolve)=>{
+  if(window.cordova){
+    document.addEventListener('deviceready', resolve, false);
+  } else {
+    resolve();
+  }
+});
 
 /* ============ LOGIN ============ */
 const loginScreen = document.getElementById('loginScreen');
@@ -1581,7 +1732,21 @@ function enterApp(){
 
 /* ============ INIT ============ */
 async function init(){
+  const hasCache = loadDataCache();
+  if(hasCache){
+    // Instant paint using last-known-good data while fresh data loads quietly below
+    updateLocationDisplay();
+    renderBanners();
+    renderServiceCards();
+    renderBag();
+    renderOrders();
+    updateBagBadge();
+    startBannerAutoplay();
+    showChooseServiceScreen();
+  }
+
   await loadBackend();
+
   if(state.address.lat!=null && state.address.distanceKm==null){
     const nearest = nearestStore(state.address.lat, state.address.lng);
     if(nearest) state.address.distanceKm = nearest.distanceKm;
@@ -1589,12 +1754,20 @@ async function init(){
   }
   updateLocationDisplay();
   renderBanners();
-  renderRestaurantList();
+  renderServiceCards();
   renderBag();
   renderOrders();
   updateBagBadge();
-  startBannerAutoplay();
   autoDetectLocationOnce();
+
+  if(!hasCache){
+    startBannerAutoplay();
+    showChooseServiceScreen();
+  } else {
+    // quietly refresh whatever's currently on screen with the fresh data
+    if(document.getElementById('view-home').classList.contains('active')) renderRestaurantList();
+    if(document.getElementById('view-restaurant-menu').classList.contains('active')){ renderCategories(); renderItems(); }
+  }
 }
 
 /* ============ BANNERS ============ */
@@ -1640,10 +1813,113 @@ function updateBannerPosition(){
 })();
 
 /* ============ RESTAURANT LIST (Home) ============ */
+/* ============ CHOOSE SERVICE (shown after every login) ============ */
+function renderServiceCards(){
+  const wrap = document.getElementById('serviceCardsWrap');
+  const imageKeys = {food:"foodCardImage", cake:"cakeCardImage", groceries:"groceriesCardImage", preorder:"preorderCardImage"};
+  wrap.innerHTML = SERVICES.map(svc=>{
+    const imgUrl = SETTINGS[imageKeys[svc.id]];
+    return `
+    <div class="service-card" data-id="${escapeAttr(svc.id)}" title="${escapeAttr(svc.title)}">
+      ${imgUrl ? `<img src="${escapeAttr(imgUrl)}" alt="${escapeAttr(svc.title)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : ``}
+      <div class="service-card-fallback" style="display:${imgUrl?'none':'flex'};">${svc.emoji}</div>
+    </div>`;
+  }).join('');
+  wrap.querySelectorAll('.service-card').forEach(card=>{
+    card.addEventListener('click', ()=>selectService(card.getAttribute('data-id')));
+  });
+}
+
+function showChooseServiceScreen(){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-choose-service').classList.add('active');
+  if(state.user) document.getElementById('chooseGreetName').textContent = state.user.name.split(' ')[0];
+  appShell.scrollTo(0,0);
+}
+
+function selectService(serviceId){
+  if(serviceId==='preorder'){
+    openPreOrderForm();
+    return;
+  }
+  state.selectedService = serviceId;
+  state.foodCategoryFilter = "All";
+  saveJSON("foodzy_service", serviceId);
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-home').classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.getAttribute('data-view')==='home'));
+  const svc = SERVICES.find(s=>s.id===serviceId);
+  document.getElementById('homeSectionTitle').textContent = serviceId==='food' ? "Restaurants near you" : (svc ? svc.title+" — nearby" : "Nearby");
+  document.getElementById('homeCatScroll').classList.toggle('hidden', serviceId!=='food');
+  if(serviceId==='food') renderHomeCategoryChips();
+  renderRestaurantList();
+  appShell.scrollTo(0,0);
+}
+document.getElementById('switchServiceBtn').addEventListener('click', showChooseServiceScreen);
+
+/* ============ PRE ORDER SERVICE ============ */
+function openPreOrderForm(){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-preorder').classList.add('active');
+  appShell.scrollTo(0,0);
+}
+document.getElementById('preOrderBackBtn').addEventListener('click', showChooseServiceScreen);
+
+document.getElementById('bookPreOrderBtn').addEventListener('click', ()=>{
+  const need = document.getElementById('preOrderNeed').value.trim();
+  const timeVal = document.getElementById('preOrderTime').value;
+  const address = document.getElementById('preOrderAddress').value.trim();
+
+  if(!need){ showToast("Please tell us what you need"); return; }
+  if(!timeVal){ showToast("Please choose a delivery time"); return; }
+  if(!address || address.length<8){ showToast("Please enter your full address"); return; }
+
+  const timeDisplay = new Date(timeVal).toLocaleString('en-IN', {weekday:'short', day:'numeric', month:'short', hour:'numeric', minute:'2-digit'});
+  const requestId = "FZPO" + Date.now().toString().slice(-8);
+
+  let msg = `📅 *Pre-Order Request — Foodzy*\n`;
+  msg += `Request ID: ${requestId}\n\n`;
+  msg += `👤 Name: ${state.user ? state.user.name : ''}\n`;
+  msg += `📞 Phone: ${state.user ? state.user.phone : ''}\n`;
+  msg += `📍 Address: ${address}\n\n`;
+  msg += `🕐 Requested delivery time: ${timeDisplay}\n\n`;
+  msg += `📝 *What's needed:*\n${need}\n\n`;
+  msg += `This is a pre-order request — please confirm availability, timing & pricing. Thank you! — via Foodzy`;
+
+  openExternal(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`);
+
+  document.getElementById('preOrderNeed').value = '';
+  document.getElementById('preOrderTime').value = '';
+  document.getElementById('preOrderAddress').value = '';
+  showToast("Pre-order request sent! Confirm on WhatsApp.");
+  showChooseServiceScreen();
+});
+
+/* ============ FOOD CATEGORY CHIPS (Home, food service only) ============ */
+function renderHomeCategoryChips(){
+  const wrap = document.getElementById('homeCatScroll');
+  const all = ["All", ...FOOD_CATEGORY_CHIPS];
+  wrap.innerHTML = all.map(c=>`
+    <button class="cat-chip ${state.foodCategoryFilter===c?'active':''}" data-cat="${escapeAttr(c)}">
+      <span class="cat-label">${escapeHtml(c)}</span>
+    </button>
+  `).join('');
+  wrap.querySelectorAll('.cat-chip').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      state.foodCategoryFilter = btn.getAttribute('data-cat');
+      renderHomeCategoryChips();
+      renderRestaurantList();
+    });
+  });
+}
+
 function renderRestaurantList(){
   const wrap = document.getElementById('restaurantList');
   const query = (document.getElementById('searchInput').value||"").toLowerCase().trim();
-  let list = STORES;
+  let list = STORES.filter(s => (s.serviceType||'food') === (state.selectedService||'food'));
+  if(state.selectedService==='food' && state.foodCategoryFilter && state.foodCategoryFilter!=='All'){
+    list = list.filter(s => (s.categories||[]).some(c=>c.toLowerCase()===state.foodCategoryFilter.toLowerCase()));
+  }
   if(query) list = list.filter(s=>s.name.toLowerCase().includes(query) || (s.cuisine||'').toLowerCase().includes(query));
   // open restaurants first, closed ones sink to the bottom (stable within each group)
   list = list.map((s,i)=>({s,i})).sort((a,b)=>{
@@ -2284,6 +2560,12 @@ document.getElementById('acctEditBtn').addEventListener('click', ()=>{
   showToast("Profile updated");
 });
 document.getElementById('acctAddressBtn').addEventListener('click', ()=>switchView('bag'));
+document.getElementById('acctSupportBtn').addEventListener('click', ()=>{
+  openExternal(`https://wa.me/918258823457?text=${encodeURIComponent("Hi Foodzy, I need help with...")}`);
+});
+document.getElementById('acctPrivacyBtn').addEventListener('click', ()=>{
+  openExternal('https://gosumit88-blip.github.io/foodzy-Policy/');
+});
 document.getElementById('acctLogoutBtn').addEventListener('click', ()=>{
   if(!confirm("Log out of Foodzy?")) return;
   localStorage.removeItem("foodzy_user");
@@ -2589,6 +2871,31 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(e=>console.warn("Foodzy: service worker registration failed —", e.message));
   });
 }
+
+/* ============ ONESIGNAL PUSH NOTIFICATIONS ============
+   Only runs inside the Cordova-wrapped app (window.cordova present) — a
+   plain browser tab has no OneSignal native plugin and skips this safely.
+   Replace ONESIGNAL_APP_ID below with the App ID from your OneSignal
+   dashboard (Settings → Keys & IDs) once you've created your app there. */
+const ONESIGNAL_APP_ID = "be65a968-3fe7-4f19-ad08-4b2525abb1c3";
+document.addEventListener('deviceready', function(){
+  if(!(window.plugins && window.plugins.OneSignal)){
+    console.warn("Foodzy: OneSignal plugin not found — push notifications won't work in this build.");
+    return;
+  }
+  if(!ONESIGNAL_APP_ID || ONESIGNAL_APP_ID === "YOUR_ONESIGNAL_APP_ID"){
+    console.warn("Foodzy: ONESIGNAL_APP_ID isn't set yet — push notifications are disabled until you add it.");
+    return;
+  }
+  try{
+    window.plugins.OneSignal.initialize(ONESIGNAL_APP_ID);
+    window.plugins.OneSignal.Notifications.requestPermission(false).then((accepted)=>{
+      console.log("Foodzy: user accepted push notifications:", accepted);
+    });
+  }catch(e){
+    console.warn("Foodzy: OneSignal init failed —", e.message);
+  }
+}, false);
 
 })();
 </script>
