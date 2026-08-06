@@ -12,6 +12,8 @@
 <allow-intent href="sms:*"/>
 <allow-intent href="mailto:*"/>
 <allow-intent href="geo:*"/>
+<!--  App icon (falls back to this for any density not explicitly declared below)  -->
+<icon src="www/icons/icon-512.png"/>
 <!--  ===== General Preferences =====  -->
 <preference name="Orientation" value="portrait"/>
 <preference name="Fullscreen" value="false"/>
@@ -39,6 +41,12 @@
 <plugin name="cordova-plugin-geolocation" spec="~4.1.0">
 <variable name="GPS_REQUIRED" value="true"/>
 </plugin>
+<!--  ===== OneSignal Push Notifications Plugin =====
+         Provides window.plugins.OneSignal in the app's JS. Also auto-injects
+         the Android notification permission (below) and FCM setup needed
+         for push to work. See the setup steps Foodzy gave you for the
+         OneSignal dashboard + Firebase side of this.  -->
+<plugin name="onesignal-cordova-plugin" spec="^5.0.0"/>
 <!--  ===== Android Platform =====  -->
 <platform name="android">
 <allow-intent href="market:*"/>
@@ -49,6 +57,16 @@
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS"/>
+<!--  Required on Android 13+ (API 33+) for the notification
+                 permission prompt to appear at all — without this, push
+                 notifications are silently blocked on newer phones.  -->
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 </config-file>
+<!--  App icon per density (optional — uses the top-level <icon> above
+             as a fallback for any size you don't provide). Add more of your
+             own generated sizes here if you have them: ldpi, mdpi, hdpi,
+             xhdpi, xxhdpi, xxxhdpi.  -->
+<icon src="www/icons/icon-512.png" density="xxxhdpi"/>
+<icon src="www/icons/icon-192.png" density="mdpi"/>
 </platform>
 </widget>
