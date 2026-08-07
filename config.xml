@@ -33,7 +33,7 @@
          before you publish — check the Play Console "Target API level"
          requirement page, these numbers can change year to year.  -->
 <preference name="android-minSdkVersion" value="24"/>
-<preference name="android-targetSdkVersion" value="34"/>
+<preference name="android-targetSdkVersion" value="36"/>
 <!--  Play Console checks THIS number (not the version= above) to allow
          a new upload. Bump it by at least 1 every single time you build a
          new AAB for Play Console — even if "version" above doesn't change.  -->
