@@ -29,17 +29,26 @@ jobs:
         node-version: '20'
 
     - name: Install Cordova
-      run: npm install -g cordova
+      run: |
+        npm cache clean --force
+        npm install -g cordova@13.0.0
+        cordova -v
 
     - name: Create Project & Build APK/AAB
       run: |
-        cordova create foodzy_project com.foodzy.customerapp "Foodzy"
+        for i in 1 2 3; do
+          cordova create foodzy_project com.foodzy.customerapp "Foodzy" && break
+          echo "cordova create failed (attempt $i) — retrying in 10s..."
+          rm -rf foodzy_project
+          sleep 10
+        done
         cd foodzy_project
 
         rm -rf www/*
         rm -f config.xml
 
         cp ../index.html www/
+        cp -r ../icons www/icons
         cp ../config.xml .
 
         cordova platform add android@13.0.0 --no-telemetry
