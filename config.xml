@@ -53,6 +53,7 @@
 <plugin name="onesignal-cordova-plugin" spec="^5.0.0"/>
 <!--  ===== Android Platform =====  -->
 <platform name="android">
+         <resource-file src="google-services.json" target="app/google-services.json" />
 <allow-intent href="market:*"/>
 <!--  Injected into AndroidManifest.xml on every build  -->
 <config-file target="AndroidManifest.xml" parent="/*">
