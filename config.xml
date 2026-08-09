@@ -51,7 +51,7 @@
          for push to work. See the setup steps Foodzy gave you for the
          OneSignal dashboard + Firebase side of this.  -->
 <plugin name="onesignal-cordova-plugin" spec="^5.0.0"/>
-<plugin name="cordova.plugin.diagnostic" spec="^7.0.0"/>        
+<plugin name="cordova.plugins.diagnostic" spec="^7.0.0"/>        
 <!--  ===== Android Platform =====  -->
 <platform name="android">
          <resource-file src="google-services.json" target="app/google-services.json" />
