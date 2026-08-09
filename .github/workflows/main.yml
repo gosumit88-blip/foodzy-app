@@ -47,8 +47,10 @@ jobs:
         rm -rf www/*
         rm -f config.xml
 
+        # Root ki saari files copy kar rahe hain taaki ERR_CONNECTION_REFUSED na aaye
         cp ../index.html www/
-        cp -r ../icons www/icons
+        cp ../google-services.json www/ 2>/dev/null || true
+        cp -r ../icons www/icons 2>/dev/null || true
         cp ../config.xml .
 
         cordova platform add android@13.0.0 --no-telemetry
@@ -62,29 +64,20 @@ jobs:
         cordova build android --release --no-telemetry -- --packageType=bundle --gradleArg=-Dorg.gradle.daemon=false
 
     - name: Decode persisted upload keystore
-      # This is the fix: instead of generating a brand-new random keystore
-      # every run (which produced a different signing key each time and
-      # broke Play Console uploads), we decode the SAME keystore every
-      # single build from a GitHub Secret. That secret holds the exact
-      # keystore Foodzy generated for you and whose certificate you already
-      # submitted to Google for the "upload key reset".
       run: |
-        cd platforms/android/app/build/outputs/bundle/release/
+        cd foodzy_project/platforms/android/app/build/outputs/bundle/release/
         echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > foodzy_upload.keystore
 
     - name: Sign AAB with persisted keystore
       run: |
-        cd platforms/android/app/build/outputs/bundle/release/
+        cd foodzy_project/platforms/android/app/build/outputs/bundle/release/
 
-        # Export the PEM certificate every run too — harmless, and handy if
-        # you ever need to re-submit it to Google for any reason.
         keytool -export -rfc \
           -keystore foodzy_upload.keystore \
           -alias "${{ secrets.ANDROID_KEY_ALIAS }}" \
           -file upload_certificate.pem \
           -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}"
 
-        # Sign the AAB with the SAME persisted key every time
         jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
           -keystore foodzy_upload.keystore \
           -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
@@ -96,6 +89,6 @@ jobs:
       with:
         name: Foodzy-Signed-Builds
         path: |
-          platforms/android/app/build/outputs/apk/debug/app-debug.apk
-          platforms/android/app/build/outputs/bundle/release/app-release.aab
-          platforms/android/app/build/outputs/bundle/release/upload_certificate.pem
+          foodzy_project/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+          foodzy_project/platforms/android/app/build/outputs/bundle/release/app-release.aab
+          foodzy_project/platforms/android/app/build/outputs/bundle/release/upload_certificate.pem
