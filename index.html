@@ -2870,33 +2870,31 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(e=>console.warn("Foodzy: service worker registration failed —", e.message));
   });
 }
-
-/* ============ ONESIGNAL PUSH NOTIFICATIONS ============
-   Only runs inside the Cordova-wrapped app (window.cordova present) — a
-   plain browser tab has no OneSignal native plugin and skips this safely.
-   Replace ONESIGNAL_APP_ID below with the App ID from your OneSignal
-   dashboard (Settings → Keys & IDs) once you've created your app there. */
+/* ============ ONESIGNAL PUSH NOTIFICATIONS ============ */
 const ONESIGNAL_APP_ID = "be65a968-3fe7-4f19-ad08-4b2525abb1c3";
-document.addEventListener('deviceready', function(){
-  if(!(window.plugins && window.plugins.OneSignal)){
-    console.warn("Foodzy: OneSignal plugin not found — push notifications won't work in this build.");
-    return;
-  }
-  if(!ONESIGNAL_APP_ID || ONESIGNAL_APP_ID === "YOUR_ONESIGNAL_APP_ID"){
-    console.warn("Foodzy: ONESIGNAL_APP_ID isn't set yet — push notifications are disabled until you add it.");
-    return;
-  }
-  try{
-    window.plugins.OneSignal.initialize(ONESIGNAL_APP_ID);
-    window.plugins.OneSignal.Notifications.requestPermission(true).then((accepted)=>{
-      console.log("Foodzy: user accepted push notifications:", accepted);
-    });
-  }catch(e){
-    console.warn("Foodzy: OneSignal init failed —", e.message);
-  }
-}, false);
 
-})();
+document.addEventListener('deviceready', function() {
+    if (!window.plugins || !window.plugins.OneSignal) {
+        console.warn("Foodzy: OneSignal plugin not found - push notifications won't work in this build.");
+        return;
+    }
+
+    if (!ONESIGNAL_APP_ID || ONESIGNAL_APP_ID === "YOUR_ONESIGNAL_APP_ID") {
+        console.warn("Foodzy: ONESIGNAL_APP_ID isn't set yet - push notifications are disabled.");
+        return;
+    }
+
+    try {
+        window.plugins.OneSignal.initialize(ONESIGNAL_APP_ID);
+
+        // Native Android 13+ permission pop-up
+        window.plugins.OneSignal.Notifications.requestPermission(true).then((accepted) => {
+            console.log("Foodzy: user accepted push notifications:", accepted);
+        });
+    } catch(e) {
+        console.warn("Foodzy: OneSignal init failed -", e.message);
+    }
+}, false);
 </script>
 </body>
 </html>
