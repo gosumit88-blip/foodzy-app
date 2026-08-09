@@ -42,19 +42,16 @@ jobs:
           rm -rf foodzy_project
           sleep 10
         done
+
+        # 1. Root files ko foodzy_project ke andar copy karein (Pehle hi copy kar rahe hain taaki self-copy collision na ho)
+        cp index.html foodzy_project/www/
+        cp -r icons foodzy_project/www/ 2>/dev/null || true
+        cp -r icons foodzy_project/ 2>/dev/null || true
+        cp google-services.json foodzy_project/www/ 2>/dev/null || true
+        cp google-services.json foodzy_project/ 2>/dev/null || true
+        cp config.xml foodzy_project/
+
         cd foodzy_project
-
-        rm -rf www/*
-        rm -f config.xml
-
-        # Root se google-services.json ko www aur project root dono jagah copy karein
-        cp ../google-services.json . 2>/dev/null || true
-        cp ../google-services.json www/ 2>/dev/null || true
-
-        cp ../index.html www/
-        cp -r ../icons www/icons 2>/dev/null || true
-        cp -r ../icons . 2>/dev/null || true
-        cp ../config.xml .
 
         cordova platform add android@13.0.0 --no-telemetry
 
@@ -95,3 +92,4 @@ jobs:
           foodzy_project/platforms/android/app/build/outputs/apk/debug/app-debug.apk
           foodzy_project/platforms/android/app/build/outputs/bundle/release/app-release.aab
           foodzy_project/platforms/android/app/build/outputs/bundle/release/upload_certificate.pem
+          
