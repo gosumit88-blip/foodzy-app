@@ -47,9 +47,11 @@ jobs:
         rm -rf www/*
         rm -f config.xml
 
-        # Root ki saari files copy kar rahe hain taaki ERR_CONNECTION_REFUSED na aaye
-        cp ../index.html www/
+        # Root se google-services.json ko www aur project root dono jagah copy karein
+        cp ../google-services.json . 2>/dev/null || true
         cp ../google-services.json www/ 2>/dev/null || true
+
+        cp ../index.html www/
         cp -r ../icons www/icons 2>/dev/null || true
         cp -r ../icons . 2>/dev/null || true
         cp ../config.xml .
