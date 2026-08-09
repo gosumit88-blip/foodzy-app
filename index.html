@@ -2888,7 +2888,7 @@ document.addEventListener('deviceready', function(){
   }
   try{
     window.plugins.OneSignal.initialize(ONESIGNAL_APP_ID);
-    window.plugins.OneSignal.Notifications.requestPermission(false).then((accepted)=>{
+    window.plugins.OneSignal.Notifications.requestPermission(true).then((accepted)=>{
       console.log("Foodzy: user accepted push notifications:", accepted);
     });
   }catch(e){
