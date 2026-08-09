@@ -69,12 +69,12 @@ jobs:
       # keystore Foodzy generated for you and whose certificate you already
       # submitted to Google for the "upload key reset".
       run: |
-        cd foodzy_project/platforms/android/app/build/outputs/bundle/release/
+        cd platforms/android/app/build/outputs/bundle/release/
         echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > foodzy_upload.keystore
 
     - name: Sign AAB with persisted keystore
       run: |
-        cd foodzy_project/platforms/android/app/build/outputs/bundle/release/
+        cd platforms/android/app/build/outputs/bundle/release/
 
         # Export the PEM certificate every run too — harmless, and handy if
         # you ever need to re-submit it to Google for any reason.
@@ -96,6 +96,6 @@ jobs:
       with:
         name: Foodzy-Signed-Builds
         path: |
-          foodzy_project/platforms/android/app/build/outputs/apk/debug/app-debug.apk
-          foodzy_project/platforms/android/app/build/outputs/bundle/release/app-release.aab
-          foodzy_project/platforms/android/app/build/outputs/bundle/release/upload_certificate.pem
+          platforms/android/app/build/outputs/apk/debug/app-debug.apk
+          platforms/android/app/build/outputs/bundle/release/app-release.aab
+          platforms/android/app/build/outputs/bundle/release/upload_certificate.pem
