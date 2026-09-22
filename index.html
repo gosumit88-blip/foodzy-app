@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -459,6 +460,10 @@ a{color:inherit;}
 .menu-header-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
 .menu-restaurant-name{font-size:17px;font-weight:700;}
 .menu-restaurant-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+.menu-fssai{
+  font-size:10.5px;color:var(--muted);margin-top:5px;
+  font-family:'Space Mono',monospace;
+}
 
 .items-grid{
   display:grid;
@@ -1125,6 +1130,7 @@ a{color:inherit;}
         <div>
           <div class="menu-restaurant-name" id="menuRestaurantName">Restaurant</div>
           <div class="menu-restaurant-meta" id="menuRestaurantMeta"></div>
+          <div class="menu-fssai" id="menuFssai" style="display:none;"></div>
         </div>
       </div>
     </div>
@@ -1320,10 +1326,10 @@ const FOOD_CATEGORY_CHIPS = ["Momo","Biryani","Rice","Meal","Pizza","Burger","Ro
    its own location and its own delivery pricing, since different stores can
    sit at different distances from a customer. */
 const DEFAULT_STORES = [
-  {id:"store1", name:"Spice Route Kitchen", image:"", cuisine:"North Indian, Mughlai", emoji:"🍛", deliveryTime:"30-35 min", isOpen:true, serviceType:"food", categories:["Biryani","Rice","Meal"], lat:28.6139, lng:77.2090, baseKm:2, baseFee:20, extraRatePer100m:1, maxDeliveryKm:12},
-  {id:"store2", name:"Wok & Roll", image:"", cuisine:"Chinese, Thai", emoji:"🥡", deliveryTime:"25-30 min", isOpen:false, serviceType:"food", categories:["Momo","Rice"], lat:28.5245, lng:77.2066, baseKm:2, baseFee:20, extraRatePer100m:1, maxDeliveryKm:12},
-  {id:"store3", name:"Sugar & Spice Bakery", image:"", cuisine:"Cakes, Pastries", emoji:"🎂", deliveryTime:"40-45 min", isOpen:true, serviceType:"cake", categories:[], lat:28.6100, lng:77.2050, baseKm:2, baseFee:25, extraRatePer100m:1, maxDeliveryKm:12},
-  {id:"store4", name:"Foodzy Daily Mart", image:"", cuisine:"Grocery & Essentials", emoji:"🛒", deliveryTime:"15-20 min", isOpen:true, serviceType:"groceries", categories:[], lat:28.6180, lng:77.2110, baseKm:2, baseFee:20, extraRatePer100m:1, maxDeliveryKm:12}
+  {id:"store1", name:"Spice Route Kitchen", image:"", cuisine:"North Indian, Mughlai", emoji:"🍛", deliveryTime:"30-35 min", fssai:"12345678901234", isOpen:true, serviceType:"food", categories:["Biryani","Rice","Meal"], lat:28.6139, lng:77.2090, baseKm:2, baseFee:20, extraRatePer100m:1, maxDeliveryKm:12},
+  {id:"store2", name:"Wok & Roll", image:"", cuisine:"Chinese, Thai", emoji:"🥡", deliveryTime:"25-30 min", fssai:"12345678901235", isOpen:false, serviceType:"food", categories:["Momo","Rice"], lat:28.5245, lng:77.2066, baseKm:2, baseFee:20, extraRatePer100m:1, maxDeliveryKm:12},
+  {id:"store3", name:"Sugar & Spice Bakery", image:"", cuisine:"Cakes, Pastries", emoji:"🎂", deliveryTime:"40-45 min", fssai:"12345678901236", isOpen:true, serviceType:"cake", categories:[], lat:28.6100, lng:77.2050, baseKm:2, baseFee:25, extraRatePer100m:1, maxDeliveryKm:12},
+  {id:"store4", name:"Foodzy Daily Mart", image:"", cuisine:"Grocery & Essentials", emoji:"🛒", deliveryTime:"15-20 min", fssai:"12345678901237", isOpen:true, serviceType:"groceries", categories:[], lat:28.6180, lng:77.2110, baseKm:2, baseFee:20, extraRatePer100m:1, maxDeliveryKm:12}
 ];
 let STORES = [...DEFAULT_STORES];
 function getStore(storeId){
@@ -1562,6 +1568,7 @@ async function loadBackend(){
       cuisine: r.cuisine || "",
       emoji: r.emoji || "🍴",
       deliveryTime: r.deliveryTime || "20-30 min",
+      fssai: (r.fssai||"").trim(),
       isOpen: r.isOpen===undefined || r.isOpen==="" ? true : /^(true|yes|1)$/i.test(r.isOpen),
       serviceType: (r.serviceType||"food").trim().toLowerCase() || "food",
       categories: (r.categories||"").split(/[,|]/).map(c=>c.trim()).filter(Boolean),
@@ -1986,6 +1993,13 @@ function openRestaurantMenu(restaurantId){
   document.getElementById('menuRestaurantMeta').textContent = store
     ? `${store.cuisine || 'Multi-cuisine'} · ⏱ ${store.deliveryTime || '20-30 min'}`
     : '';
+  const fssaiEl = document.getElementById('menuFssai');
+  if(store && store.fssai){
+    fssaiEl.textContent = `FSSAI Lic. No: ${store.fssai}`;
+    fssaiEl.style.display = 'block';
+  } else {
+    fssaiEl.style.display = 'none';
+  }
   const thumbEl = document.getElementById('menuHeaderThumb');
   if(store && store.image){
     thumbEl.classList.add('img');
@@ -2369,6 +2383,41 @@ function applyCoupon(rawCode){
 }
 
 /* ============ PLACE ORDER ============ */
+/* Saves the order to the backend Orders sheet, so it shows up in the Admin
+   panel and can be assigned to a delivery rider. This is best-effort and
+   never blocks or interrupts the WhatsApp order flow — if it fails (no
+   Apps Script configured, network hiccup, etc.), the order still goes out
+   on WhatsApp exactly as before. */
+function saveOrderToBackend(order, addr, bill){
+  if(!APPS_SCRIPT_URL) return;
+  const restaurantNames = [...new Set(bill.storeBreakdown.map(b=>b.storeName))].join(', ');
+  const payload = {
+    action: "saveOrder",
+    order: {
+      orderId: order.id,
+      date: order.date,
+      customerName: addr.name,
+      customerPhone: addr.phone,
+      customerAddress: addr.address,
+      customerLat: addr.lat || "",
+      customerLng: addr.lng || "",
+      restaurantNames,
+      items: order.items,
+      subtotal: order.subtotal,
+      discount: order.discount,
+      deliveryFee: order.deliveryFee,
+      total: order.total,
+      couponCode: order.coupon || "",
+      instructions: order.instructions || ""
+    }
+  };
+  fetch(APPS_SCRIPT_URL, {
+    method: "POST",
+    headers: {"Content-Type":"text/plain;charset=utf-8"},
+    body: JSON.stringify(payload)
+  }).catch(e=>console.warn("Foodzy: order backend save failed (non-fatal) —", e.message));
+}
+
 function placeOrder(){
   const entries = Object.entries(state.cart);
   if(!entries.length){ showToast("Your bag is empty"); return; }
@@ -2420,6 +2469,7 @@ function placeOrder(){
 
   state.orders.unshift(order);
   saveJSON("foodzy_orders", state.orders);
+  saveOrderToBackend(order, addr, bill);
 
   // build WhatsApp message, grouped by store
   let msg = `🛒 *New Order — Foodzy*\n`;
@@ -2710,7 +2760,8 @@ function geoErrorMessage(err){
   }
 }
 
-function detectGPS(){
+async function detectGPS(){
+  await cordovaReady;
   if(!navigator.geolocation){ showToast("Location isn't supported on this device — please pick your address on the map"); return; }
   showToast("Detecting your location...");
   navigator.geolocation.getCurrentPosition((pos)=>{
@@ -2799,8 +2850,10 @@ document.getElementById('confirmLocationBtn').addEventListener('click', ()=>{
 /* Auto location detection — runs quietly once after login if no address is
    saved yet. Uses the browser's geolocation permission prompt; if the
    customer denies or it's unavailable, they can still set location manually. */
-function autoDetectLocationOnce(){
-  if(state.address.lat || !navigator.geolocation) return;
+async function autoDetectLocationOnce(){
+  if(state.address.lat) return;
+  await cordovaReady;
+  if(!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition((pos)=>{
     const {latitude, longitude} = pos.coords;
     state.address.lat = latitude;
@@ -2870,31 +2923,8 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(e=>console.warn("Foodzy: service worker registration failed —", e.message));
   });
 }
-/* ============ ONESIGNAL PUSH NOTIFICATIONS ============ */
-const ONESIGNAL_APP_ID = "be65a968-3fe7-4f19-ad08-4b2525abb1c3";
 
-document.addEventListener('deviceready', function() {
-    if (!window.plugins || !window.plugins.OneSignal) {
-        console.warn("Foodzy: OneSignal plugin not found - push notifications won't work in this build.");
-        return;
-    }
-
-    if (!ONESIGNAL_APP_ID || ONESIGNAL_APP_ID === "YOUR_ONESIGNAL_APP_ID") {
-        console.warn("Foodzy: ONESIGNAL_APP_ID isn't set yet - push notifications are disabled.");
-        return;
-    }
-
-    try {
-        window.plugins.OneSignal.initialize(ONESIGNAL_APP_ID);
-
-        // Native Android 13+ permission pop-up
-        window.plugins.OneSignal.Notifications.requestPermission(true).then((accepted) => {
-            console.log("Foodzy: user accepted push notifications:", accepted);
-        });
-    } catch(e) {
-        console.warn("Foodzy: OneSignal init failed -", e.message);
-    }
-}, false);
+})();
 </script>
 </body>
 </html>
